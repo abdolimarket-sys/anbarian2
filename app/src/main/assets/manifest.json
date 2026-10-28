@@ -1,0 +1,13 @@
+{
+  "name": "انبارگردانی آذر",
+  "short_name": "انبارگردانی",
+  "description": "اپ انبارگردانی آفلاین با انتقال فایل",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0fdfa",
+  "theme_color": "#0f766e",
+  "lang": "fa",
+  "dir": "rtl"
+}

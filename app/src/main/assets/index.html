@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="اپ انبارگردانی آذر با ذخیره‌سازی محلی و عملکرد هسته بدون اینترنت؛ ورود XLSX و CSV به‌صورت آفلاین">
+  <link rel="manifest" href="manifest.json">
+  <title>انبارگردانی</title>
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-deeper: #115e59;
+      --primary-soft: #ccfbf1;
+      --accent: #f59e0b;
+      --bg: #f0fdfa;
+      --bg2: #e6f7f4;
+      --card: #ffffff;
+      --text: #134e4a;
+      --text-soft: #5b7a76;
+      --danger: #e11d48;
+      --warning: #d97706;
+      --success: #059669;
+      --border: #99f6e4;
+      --border-light: #d1fae5;
+      --shadow: 0 4px 20px rgba(13,148,136,.10);
+      --shadow-sm: 0 2px 8px rgba(13,148,136,.08);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --nav-h: 68px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 120px, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: calc(var(--nav-h) + var(--safe-b) + 8px);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    header {
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+      color: #fff;
+      padding: 14px 16px 12px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 8px 24px rgba(15,118,110,.25);
+      border-radius: 0 0 22px 22px;
+    }
+    header h1 {
+      font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    header .subtitle { font-size: .78rem; opacity: .9; margin-top: 4px; font-weight: 500; }
+    .progress-wrap { margin-top: 10px; }
+    .progress-bar-outer {
+      height: 8px; background: rgba(255,255,255,.22); border-radius: 99px; overflow: hidden;
+    }
+    .progress-bar-inner {
+      height: 100%; background: linear-gradient(90deg, #5eead4, #a7f3d0);
+      border-radius: 99px; transition: width .4s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 0 12px rgba(94,234,212,.5);
+    }
+    .progress-text {
+      font-size: .72rem; opacity: .92; margin-top: 5px;
+      display: flex; justify-content: space-between; font-weight: 600;
+    }
+    .offline-badge {
+      display: inline-flex; align-items: center; gap: 4px; font-size: .65rem; font-weight: 600;
+      background: rgba(255,255,255,.18); padding: 3px 9px; border-radius: 20px;
+      margin-right: auto; backdrop-filter: blur(6px);
+    }
+    .nav {
+      display: flex; background: rgba(255,255,255,.92); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-light);
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      box-shadow: 0 -6px 24px rgba(15,118,110,.08);
+      padding: 6px 4px calc(6px + var(--safe-b));
+      height: calc(var(--nav-h) + var(--safe-b));
+    }
+    .nav button {
+      flex: 1; border: none; background: none; padding: 6px 2px;
+      font-size: .7rem; color: var(--text-soft); font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer; border-radius: 14px; transition: .2s; font-family: inherit;
+    }
+    .nav button svg { width: 24px; height: 24px; transition: .2s; }
+    .nav button.active {
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+    }
+    .nav button.active svg { transform: scale(1.08); }
+    .page { display: none; padding: 12px 12px 20px; max-width: 560px; margin: 0 auto; animation: fadeIn .25s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .card {
+      background: var(--card); border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 12px; box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-light);
+    }
+    .card-title {
+      font-size: .92rem; font-weight: 800; margin-bottom: 10px;
+      color: var(--primary-deeper); display: flex; align-items: center; gap: 6px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 11px 16px; border: none; border-radius: 14px; font-size: .88rem;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: transform .12s, box-shadow .2s, background .2s;
+      min-height: 44px;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; box-shadow: 0 4px 14px rgba(13,148,136,.3);
+    }
+    .btn-secondary { background: #f1f5f9; color: #334155; }
+    .btn-danger { background: linear-gradient(135deg, #f43f5e, var(--danger)); color: #fff; }
+    .btn-success { background: linear-gradient(135deg, #10b981, var(--success)); color: #fff; box-shadow: 0 4px 12px rgba(5,150,105,.25); }
+    .btn-warning { background: linear-gradient(135deg, #fbbf24, var(--warning)); color: #fff; }
+    .btn-sm { padding: 7px 12px; font-size: .78rem; min-height: 36px; border-radius: 10px; }
+    .btn-block { width: 100%; }
+    .btn-icon {
+      width: 46px; height: 46px; padding: 0; border-radius: 50%; font-size: 1.4rem;
+      box-shadow: 0 3px 10px rgba(13,148,136,.25);
+    }
+    input, select, textarea {
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+      border-radius: 14px; font-size: .95rem; font-family: inherit;
+      background: #f8fffe; color: var(--text); transition: border .2s, box-shadow .2s;
+      min-height: 46px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(13,148,136,.15);
+      background: #fff;
+    }
+    label { display: block; font-size: .78rem; font-weight: 700; margin-bottom: 5px; color: var(--primary-dark); }
+    .form-group { margin-bottom: 12px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .search-box { position: relative; margin-bottom: 10px; }
+    .search-box input {
+      padding-right: 42px; background: #fff;
+      box-shadow: var(--shadow-sm); border-color: var(--border-light);
+    }
+    .search-box svg {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: #94a3b8; width: 18px; height: 18px;
+    }
+    .item-list { display: flex; flex-direction: column; gap: 10px; }
+    .item {
+      background: #fff; border-radius: var(--radius-sm); padding: 12px 14px;
+      border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 6px;
+      box-shadow: var(--shadow-sm); transition: border .2s, box-shadow .2s;
+    }
+    .item.highlight {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13,148,136,.2), var(--shadow);
+    }
+    .item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .item-name { font-weight: 800; font-size: .95rem; letter-spacing: -.01em; }
+    .item-code {
+      font-size: .74rem; color: var(--text-soft); font-family: ui-monospace, monospace;
+      direction: ltr; text-align: left; margin-top: 2px;
+    }
+    .item-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: .76rem; color: #475569; }
+    .item-meta span {
+      background: var(--primary-soft); padding: 3px 9px; border-radius: 8px;
+      font-weight: 600; color: var(--primary-deeper);
+    }
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 20px;
+      font-size: .7rem; font-weight: 800; letter-spacing: .02em;
+    }
+    .badge-ok { background: #d1fae5; color: #065f46; }
+    .badge-diff { background: #ffe4e6; color: #9f1239; }
+    .badge-new { background: #e0f2fe; color: #075985; }
+    .badge-zero { background: #fef3c7; color: #92400e; }
+    .count-controls { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .count-controls input {
+      width: 80px; text-align: center; font-weight: 800; font-size: 1.15rem;
+      min-height: 46px; border-radius: 14px;
+    }
+    .count-controls .btn-icon {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; font-size: 1.4rem; line-height: 1; width: 46px; height: 46px;
+    }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-card {
+      background: #fff; border-radius: var(--radius-sm); padding: 14px 10px; text-align: center;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+    }
+    .stat-value {
+      font-size: 1.45rem; font-weight: 900; color: var(--primary-dark);
+      letter-spacing: -.03em;
+    }
+    .stat-label { font-size: .72rem; color: var(--text-soft); margin-top: 3px; font-weight: 600; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,40,38,.45); z-index: 200;
+      display: none; align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff; border-radius: 24px 24px 0 0; width: 100%; max-width: 520px;
+      max-height: 92vh; overflow-y: auto; padding: 18px 18px calc(18px + var(--safe-b));
+      animation: slideUp .3s cubic-bezier(.32,.72,0,1);
+      box-shadow: 0 -12px 40px rgba(0,0,0,.15);
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 800; color: var(--primary-deeper); }
+    .close-btn {
+      background: #f1f5f9; border: none; font-size: 1.3rem; cursor: pointer;
+      color: #64748b; width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #scanner-container { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+    .empty-state { text-align: center; padding: 36px 16px; color: #94a3b8; }
+    .empty-state p { font-weight: 600; }
+    .hint { font-size: .78rem; color: var(--text-soft); margin-top: 5px; line-height: 1.6; }
+    .toast {
+      position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-12px);
+      background: #134e4a; color: #fff; padding: 12px 20px; border-radius: 16px;
+      font-size: .88rem; font-weight: 700; z-index: 300; opacity: 0; transition: .3s;
+      pointer-events: none; max-width: 90%; text-align: center;
+      box-shadow: 0 8px 28px rgba(0,0,0,.2);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .toast.success { background: linear-gradient(135deg, #10b981, #059669); }
+    .fab {
+      position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); left: 16px;
+      width: 58px; height: 58px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; border: none;
+      box-shadow: 0 6px 20px rgba(13,148,136,.4);
+      font-size: 1.55rem; cursor: pointer; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .15s;
+    }
+    .fab:active { transform: scale(.92); }
+    .fab.secondary {
+      left: auto; right: 16px;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      box-shadow: 0 6px 20px rgba(217,119,6,.35);
+      font-size: 1.3rem;
+    }
+    .filter-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .filter-tabs::-webkit-scrollbar { display: none; }
+    .filter-tab {
+      padding: 8px 14px; border-radius: 24px; border: 1.5px solid var(--border-light);
+      background: #fff; font-size: .78rem; font-weight: 700; white-space: nowrap;
+      cursor: pointer; color: var(--text-soft); transition: .2s; font-family: inherit;
+    }
+    .filter-tab.active {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff; border-color: transparent;
+      box-shadow: 0 3px 10px rgba(13,148,136,.25);
+    }
+    .install-banner {
+      background: linear-gradient(135deg, #0f766e, #0d9488); color: #fff;
+      padding: 12px 16px; display: none; align-items: center; justify-content: space-between;
+      gap: 12px; font-size: .85rem; font-weight: 600;
+    }
+    .install-banner.show { display: flex; }
+    .install-banner button {
+      background: #fff; color: var(--primary-dark); border: none;
+      padding: 8px 14px; border-radius: 12px; font-weight: 800; font-size: .8rem;
+      font-family: inherit; min-height: 40px;
+    }
+    .import-box {
+      border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 20px;
+      text-align: center; background: linear-gradient(180deg, #f8fffe, #f0fdfa); margin-bottom: 10px;
+      transition: .2s;
+    }
+    .import-box.dragover { border-color: var(--primary); background: var(--primary-soft); transform: scale(1.01); }
+    .progress-bar { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-top: 10px; }
+    .progress-bar div { height: 100%; background: linear-gradient(90deg, var(--primary), #5eead4); width: 0; transition: width .3s; border-radius: 99px; }
+    .scan-result-card {
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
+      color: #fff; border-radius: 20px; padding: 16px; margin-bottom: 12px; display: none;
+      box-shadow: 0 8px 28px rgba(15,118,110,.3);
+    }
+    .scan-result-card.show { display: block; animation: fadeIn .25s ease; }
+    .scan-result-card .name { font-size: 1.12rem; font-weight: 800; }
+    .scan-result-card .meta { font-size: .82rem; opacity: .9; margin-top: 4px; }
+    .scan-result-card .count-row {
+      display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px;
+    }
+    .scan-result-card .count-row input {
+      width: 96px; text-align: center; font-size: 1.5rem; font-weight: 900;
+      border: none; border-radius: 14px; padding: 10px; min-height: 52px;
+    }
+    .scan-result-card .btn-icon {
+      background: rgba(255,255,255,.22); color: #fff; width: 52px; height: 52px; font-size: 1.6rem;
+      backdrop-filter: blur(4px);
+    }
+    .diff-positive { color: var(--success); }
+    .diff-negative { color: var(--danger); }
+    .actions-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+    .toolbar select { width: auto; min-width: 120px; padding: 8px 12px; font-size: .82rem; min-height: 40px; }
+    .session-info {
+      background: linear-gradient(135deg, #ecfdf5, #f0fdfa);
+      border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      padding: 10px 12px; font-size: .8rem; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .recent-scans { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; scrollbar-width: none; }
+    .recent-scans::-webkit-scrollbar { display: none; }
+    .recent-chip {
+      background: #fff; border: 1px solid var(--border-light); border-radius: 24px;
+      padding: 7px 14px; font-size: .76rem; font-weight: 700; white-space: nowrap;
+      cursor: pointer; box-shadow: var(--shadow-sm); transition: .15s;
+    }
+    .recent-chip:active { background: var(--primary-soft); transform: scale(.96); }
+    .continuous-toggle { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: .88rem; font-weight: 600; }
+    .switch { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch .slider {
+      position: absolute; inset: 0; background: #cbd5e1; border-radius: 28px; cursor: pointer; transition: .25s;
+    }
+    .switch .slider:before {
+      content: ''; position: absolute; width: 22px; height: 22px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: .25s; box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+    .switch input:checked + .slider { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+    .loc-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .loc-bar select { flex: 1; min-width: 120px; padding: 10px 12px; font-size: .88rem; }
+    .blind-badge {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff;
+      font-size: .68rem; font-weight: 800; padding: 4px 10px; border-radius: 12px;
+    }
+    .scanner-status { font-size: .75rem; color: var(--text-soft); text-align: center; margin-top: 6px; }
+    .scan-flash { animation: flashGreen .4s ease; }
+    @keyframes flashGreen {
+      0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+      100% { box-shadow: 0 0 0 16px rgba(16,185,129,0); }
+    }
+    body.session-locked .count-controls input,
+    body.session-locked .count-controls .btn-icon,
+    body.session-locked .fab { opacity: .4; pointer-events: none; }
+    [data-theme="dark"] {
+      --bg: #0c1f1c; --bg2: #0a1916; --card: #132e2a; --text: #e6fffa;
+      --text-soft: #94b8b2; --border: #1e4d46; --border-light: #1a3d38;
+      --primary-soft: #134e4a; --shadow: 0 4px 20px rgba(0,0,0,.35);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.25);
+    }
+    [data-theme="dark"] body { background: var(--bg); }
+    [data-theme="dark"] .item,
+    [data-theme="dark"] .stat-card,
+    [data-theme="dark"] .recent-chip,
+    [data-theme="dark"] .filter-tab,
+    [data-theme="dark"] .search-box input,
+    [data-theme="dark"] .modal { background: var(--card); color: var(--text); }
+    [data-theme="dark"] .btn-secondary { background: #1e3d38; color: #e6fffa; }
+    [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+      background: #0f2925; color: var(--text); border-color: var(--border);
+    }
+    [data-theme="dark"] .nav { background: rgba(12,31,28,.94); }
+    [data-theme="dark"] .session-info { background: linear-gradient(135deg,#132e2a,#0f2925); }
+    [data-theme="dark"] .import-box { background: #0f2925; }
+    @media (min-width: 600px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .page { padding: 16px 20px 24px; }
+    }
+  
+    @media print {
+      body * { visibility: hidden !important; }
+      #printReport, #printReport * { visibility: visible !important; }
+      #printReport {
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 16px; background: #fff; color: #000;
+        font-size: 11pt;
+      }
+      .nav, header, .fab, .install-banner, .toast, .modal-overlay { display: none !important; }
+      body { padding: 0; background: #fff; }
+      #printReport table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      #printReport th, #printReport td { border: 1px solid #333; padding: 5px 7px; text-align: right; }
+      #printReport th { background: #eee; }
+      #printReport h1 { font-size: 16pt; margin-bottom: 6px; }
+      #printReport .meta { font-size: 10pt; margin-bottom: 10px; }
+      .page-break { page-break-before: always; }
+    }
+    #printReport { display: none; }
+
+  </style>
+</head>
+<body>
+  <div class="install-banner" id="installBanner">
+    <span>📱 نصب اپ روی گوشی</span>
+    <button onclick="installPWA()">نصب</button>
+  </div>
+  <header>
+    <h1>
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      انبارگردانی
+      <span class="offline-badge" id="netBadge">🟢 آنلاین</span>
+    </h1>
+    <div class="subtitle" id="headerSubtitle">آماده برای شروع</div>
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar" style="width:0%"></div></div>
+      <div class="progress-text"><span id="progressLabel">۰٪</span><span id="progressCount">۰ / ۰</span></div>
+    </div>
+  </header>
+  <div class="toast" id="toast"></div>
+  <div id="printReport"></div>
+
+  <div class="page active" id="page-count">
+    <div class="session-info" id="sessionInfo">
+      <span id="sessionDate">جلسه: —</span>
+      <span id="sessionStatus" class="badge badge-ok">باز</span>
+      <span id="blindBadge" class="blind-badge" style="display:none">شمارش کور</span>
+      <span id="operatorLabel" style="font-size:.75rem;opacity:.9">👤 —</span>
+      <button class="btn btn-sm btn-secondary" id="undoBtn" onclick="undoLast()" disabled title="برگشت آخرین عمل">↩ Undo</button>
+      <button class="btn btn-sm btn-warning" id="btnCloseSession" onclick="closeSession()">🔒 بستن جلسه</button>
+      <button class="btn btn-sm btn-secondary" id="btnReopenSession" style="display:none" onclick="reopenSession()">بازگشایی</button>
+      <button class="btn btn-sm btn-secondary" onclick="startNewSession()">جلسه جدید</button>
+    </div>
+    <div class="loc-bar">
+      <select id="locationFilter" onchange="onLocationChange()">
+        <option value="">همه محل‌ها</option>
+      </select>
+      <button class="btn btn-sm btn-secondary" onclick="setCurrentLocation()">📍 تنظیم محل فعلی</button>
+    </div>
+    <div class="loc-bar" id="phaseBar" style="display:none">
+      <button class="filter-tab active" data-phase="1" onclick="setCountPhase(1)">فاز ۱ — شمارش اول</button>
+      <button class="filter-tab" data-phase="2" onclick="setCountPhase(2)">فاز ۲ — شمارش دوم</button>
+      <button class="btn btn-sm btn-secondary" onclick="setCountFilter('mismatch2')">اختلاف دو شمارش</button>
+    </div>
+    <div class="scan-result-card" id="scanResultCard">
+      <div class="name" id="scanResultName">—</div>
+      <div class="meta" id="scanResultMeta">—</div>
+      <div class="count-row">
+        <button class="btn btn-icon" onclick="adjustScanned(-1)">−</button>
+        <input type="number" id="scanResultQty" min="0" step="any" onchange="setScannedQty(this.value)">
+        <button class="btn btn-icon" onclick="adjustScanned(1)">＋</button>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:.78rem;opacity:.9" id="scanResultDiff"></div>
+      <div class="actions-row" style="justify-content:center;margin-top:8px">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.25);color:#fff" onclick="setScannedQty(0)">صفر</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.25);color:#fff" id="btnEqSystem" onclick="setScannedToSystem()">= سیستم</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.25);color:#fff" onclick="addNoteToScanned()">یادداشت</button>
+      </div>
+    </div>
+    <div class="recent-scans" id="recentScans"></div>
+    <div class="search-box">
+      <input type="text" id="searchCount" placeholder="جستجو نام، بارکد، محل..." oninput="clearTimeout(searchDebounce);searchDebounce=setTimeout(filterCountList,180)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </div>
+    <div class="toolbar">
+      <div class="filter-tabs" style="margin:0;flex:1">
+        <button class="filter-tab active" data-filter="all" onclick="setCountFilter('all')">همه</button>
+        <button class="filter-tab" data-filter="uncounted" onclick="setCountFilter('uncounted')">نشده</button>
+        <button class="filter-tab" data-filter="diff" onclick="setCountFilter('diff')">مغایرت</button>
+        <button class="filter-tab" data-filter="ok" onclick="setCountFilter('ok')">تطابق</button>
+      </div>
+      <select id="sortCount" onchange="renderCountList()">
+        <option value="default">مرتب‌سازی</option>
+        <option value="name">نام</option>
+        <option value="diff">مغایرت</option>
+        <option value="location">محل</option>
+        <option value="uncounted">نشده اول</option>
+      </select>
+    </div>
+    <div class="item-list" id="countList"></div>
+    <button class="fab" onclick="openScanner()" title="اسکن">📷</button>
+    <button class="fab secondary" onclick="openQuickCount()" title="شمارش سریع">⚡</button>
+  </div>
+
+  <div class="page" id="page-products">
+    <div class="card">
+      <div class="card-title">📥 وارد کردن از اکسل حسابداری</div>
+      <div class="import-box" id="importBox" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+        <p style="font-weight:600;margin-bottom:6px">فایل Excel یا CSV را اینجا رها کنید</p>
+        <p class="hint">پشتیبانی از XLSX و CSV؛ تشخیص خودکار ستون‌ها و امکان اصلاح دستی برای هلو، سپیدار و سایر نرم‌افزارها</p>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="document.getElementById('excelFile').click()">انتخاب فایل</button>
+        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
+        <div class="progress-bar" id="importProgress" style="display:none"><div></div></div>
+        <p class="hint" id="importStatus"></p>
+      </div>
+    </div>
+    <div class="search-box">
+      <input type="text" id="searchProducts" placeholder="جستجو نام یا بارکد..." oninput="clearTimeout(searchDebounce);searchDebounce=setTimeout(filterProductsList,180)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </div>
+    <button class="btn btn-secondary btn-block" style="margin-bottom:10px" onclick="openProductModal()">+ افزودن کالای دستی</button>
+    <div class="item-list" id="productsList"></div>
+  </div>
+
+  <div class="page" id="page-report">
+    <div class="stats-grid" id="statsGrid"></div>
+
+    
+    <div class="card" id="readinessCard">
+      <div class="card-title">✅ آمادگی انبارگردانی</div>
+      <div id="readinessBody" class="hint">—</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="exportReadinessIssues()">📥 خروجی اکسل موارد نیازمند بررسی</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="toggleDiscrepancyReview()">🧾 رسیدگی و ثبت نتیجه مغایرت‌ها</button>
+      <div id="discrepancyReviewPanel" style="display:none;margin-top:10px"></div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" id="btnReadyClose" onclick="closeSession()">🔒 بستن جلسه و قفل گزارش</button>
+    </div>
+
+    <div class="card" id="finalReportCard">
+      <div class="card-title">🔒 گزارش نهایی جلسه</div>
+      <p class="hint" id="finalReportHint">بعد از بستن جلسه، شمارش قفل می‌شود و گزارش نهایی صادر می‌گردد.</p>
+      <div id="finalReportStats"></div>
+      <div class="actions-row" style="flex-direction:column;margin-top:8px">
+        <button class="btn btn-success btn-block" id="btnExportFinal" onclick="exportFinalReport()" disabled>📥 دانلود گزارش نهایی (قفل‌شده)</button>
+      </div>
+    </div>
+
+    
+    <div class="card">
+      <div class="card-title">👥 چند کاربر — ادغام شمارش</div>
+      <p class="hint" style="margin-bottom:8px">هر نفر روی گوشی خودش شمارش می‌کند، فایل جزئی را می‌دهد، شما ادغام می‌کنید.</p>
+      <div class="form-group">
+        <label>نام شمارش‌کننده (این دستگاه)</label>
+        <input type="text" id="operatorName" placeholder="مثال: علی" onchange="saveOperator()">
+      </div>
+      <div class="actions-row" style="flex-direction:column">
+        <button class="btn btn-primary btn-block" onclick="exportPartialCount()">📤 خروجی شمارش این دستگاه</button>
+        <button class="btn btn-secondary btn-block" onclick="document.getElementById('mergeFile').click()">📥 ادغام فایل شمارش دیگران</button>
+        <input type="file" id="mergeFile" accept=".json" style="display:none" onchange="mergePartialCount(event)">
+      </div>
+      <p class="hint" id="mergeStatus" style="margin-top:8px"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">عملیات دسته‌ای</div>
+      <div class="actions-row" style="flex-direction:column">
+        <button class="btn btn-warning btn-block" onclick="bulkSetUncountedZero()">صفر کردن همه شمارش‌نشده‌ها</button>
+        <button class="btn btn-secondary btn-block" onclick="acceptSecondCounts()">تأیید شمارش دوم به‌عنوان نهایی</button>
+        <button class="btn btn-secondary btn-block" onclick="showDoubleMismatches()">نمایش اختلاف دو شمارش</button>
+        <button class="btn btn-success btn-block" onclick="exportDoubleCountMismatches()">📥 دانلود اکسل اختلاف شمارش اول و دوم</button>
+        <button class="btn btn-secondary btn-block" onclick="applyCountsToSystem()">اعمال شمارش به‌عنوان موجودی سیستم</button>
+        <button class="btn btn-secondary btn-block" onclick="clearAllCounts()">پاک کردن همه شمارش‌ها</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">لیست مغایرت‌ها</div>
+      <div class="item-list" id="diffList"></div>
+    </div>
+    <div class="actions-row" style="flex-direction:column">
+      <button class="btn btn-success btn-block" onclick="exportExcel(false)">📥 دانلود اکسل کامل</button>
+      <button class="btn btn-success btn-block" onclick="exportExcel(true)">📥 دانلود فقط مغایرت‌ها</button>
+      <button class="btn btn-secondary btn-block" onclick="exportCSV()">📄 دانلود CSV</button>
+      <button class="btn btn-secondary btn-block" onclick="exportJSON()">💾 پشتیبان JSON</button>
+      <button class="btn btn-secondary btn-block" onclick="document.getElementById('importJsonFile').click()">📂 بازیابی JSON</button>
+      <input type="file" id="importJsonFile" accept=".json" style="display:none" onchange="importJSON(event)">
+      <button class="btn btn-secondary btn-block" onclick="printProfessionalReport()">🖨️ چاپ گزارش</button>
+      
+    <div class="card">
+      <div class="card-title">📋 لاگ حسابرسی</div>
+      <p class="hint" style="margin-bottom:8px">چه کسی، چه وقت، چه تغییری داده — تا ۵۰۰ رویداد آخر</p>
+      <div class="item-list" id="auditList"></div>
+      <div class="actions-row" style="flex-direction:column;margin-top:8px">
+        <button class="btn btn-secondary btn-block" onclick="exportAuditLog()">📥 دانلود لاگ اکسل</button>
+        <button class="btn btn-danger btn-block" onclick="clearAuditLog()">پاک کردن لاگ</button>
+      </div>
+    </div>
+
+      <button class="btn btn-danger btn-block" onclick="confirmReset()">🗑️ پاک کردن همه داده‌ها</button>
+    </div>
+  </div>
+
+  <div class="page" id="page-settings">
+    
+    <div class="card">
+      <div class="card-title">📷 راهنمای اسکن بهتر</div>
+      <p class="hint">• بارکد را صاف و در فاصله ۱۰–۲۰ سانتی‌متری بگیرید<br>
+      • نور محیط کافی باشد یا دکمه فلش را بزنید<br>
+      • از بارکدخوان بلوتوث برای سرعت و دقت بیشتر استفاده کنید<br>
+      • اگر دوربین ضعیف است: ورود دستی یا اسکنر سخت‌افزاری<br>
+      • روی بارکدهای مخدوش، زاویه را کمی کج کنید</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">تنظیمات اسکن</div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="continuousScan" onchange="saveSettings()"><span class="slider"></span></label>
+        <span>اسکن پیوسته (دوربین بسته نشود)</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="soundOnScan" checked onchange="saveSettings()"><span class="slider"></span></label>
+        <span>صدای تأیید اسکن</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="vibrateOnScan" checked onchange="saveSettings()"><span class="slider"></span></label>
+        <span>لرزش هنگام اسکن</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="autoIncrement" checked onchange="saveSettings()"><span class="slider"></span></label>
+        <span>افزایش خودکار با هر اسکن</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="blindCount" onchange="saveSettings();renderCountList();"><span class="slider"></span></label>
+        <span>شمارش کور (مخفی کردن موجودی سیستم)</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="doubleCount" onchange="saveSettings();renderCountList();"><span class="slider"></span></label>
+        <span>شمارش دوم (دو بار شمارش برای دقت بیشتر)</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="darkMode" onchange="saveSettings();applyDarkMode()"><span class="slider"></span></label>
+        <span>حالت تاریک (مناسب انبار کم‌نور)</span>
+      </div>
+      <div class="continuous-toggle">
+        <label class="switch"><input type="checkbox" id="btScanner" checked onchange="saveSettings()"><span class="slider"></span></label>
+        <span>بارکدخوان بلوتوث / USB (ورودی کیبورد)</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">بارکدخوان سخت‌افزاری</div>
+      <p class="hint">اسکنر بلوتوث یا USB را جفت کنید. بارکد را اسکن کنید؛ مثل تایپ کیبورد + Enter عمل می‌کند و حتی وقتی دوربین بسته است شمارش می‌شود.</p>
+      <p class="scanner-status" id="btStatus">آماده دریافت از بارکدخوان</p>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">💾 پایداری و پشتیبان</div>
+      <p class="hint" id="backupInfo">—</p>
+      <div class="actions-row" style="flex-direction:column;margin-top:8px">
+        <button class="btn btn-success btn-block" onclick="exportFullBackup()">دانلود پشتیبان کامل</button>
+        <button class="btn btn-secondary btn-block" onclick="document.getElementById('fullBackupFile').click()">بازیابی از پشتیبان کامل</button>
+        <input type="file" id="fullBackupFile" accept=".json" style="display:none" onchange="importFullBackup(event)">
+        <button class="btn btn-warning btn-block" onclick="restoreAutoBackup()">بازیابی پشتیبان خودکار</button>
+        <button class="btn btn-secondary btn-block" onclick="restorePreRestoreBackup()">بازگردانی نسخه قبل از بازیابی</button>
+      </div>
+      <p class="hint" style="margin-top:8px">با هر تغییر، یک پشتیبان خودکار در حافظه گوشی و حافظه امن ذخیره می‌شود.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">اطلاعات</div>
+      <p class="hint" id="storageInfo">—</p>
+      <p class="hint" style="margin-top:8px">نسخه ۱.۰ • داده‌های شمارش روی همین دستگاه ذخیره می‌شوند؛ برخی قابلیت‌ها هنوز به اینترنت وابسته‌اند.</p>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="exportAppDiagnostics()">🩺 بررسی سلامت برنامه و خروجی گزارش</button>
+      <p class="hint" id="diagnosticsStatus" style="margin-top:8px">گزارش سلامت، اطلاعات شخصی و نام کالاها را شامل نمی‌شود.</p>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="active" data-page="count" onclick="showPage('count')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      شمارش
+    </button>
+    <button data-page="products" onclick="showPage('products')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      کالاها
+    </button>
+    <button data-page="report" onclick="showPage('report')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      گزارش
+    </button>
+    <button data-page="settings" onclick="showPage('settings')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      تنظیمات
+    </button>
+  </nav>
+
+  <div class="modal-overlay" id="productModal">
+    <div class="modal">
+      <div class="modal-header"><h2 id="productModalTitle">افزودن کالا</h2><button class="close-btn" onclick="closeProductModal()">×</button></div>
+      <form id="productForm" onsubmit="saveProduct(event)">
+        <input type="hidden" id="productId">
+        <div class="form-group"><label>نام کالا *</label><input type="text" id="productName" required></div>
+        <div class="form-row">
+          <div class="form-group"><label>بارکد</label><div style="display:flex;gap:5px"><input type="text" id="productCode" style="flex:1"><button type="button" class="btn btn-secondary btn-sm" onclick="scanForField('productCode')">📷</button></div></div>
+          <div class="form-group"><label>کد کالا</label><input type="text" id="productSku"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>موجودی سیستم</label><input type="number" id="productSystemQty" value="0" min="0" step="any"></div>
+          <div class="form-group"><label>قیمت واحد</label><input type="number" id="productPrice" value="0" min="0" step="any"></div>
+        </div>
+        <div class="form-group"><label>واحد</label><select id="productUnit"><option value="عدد">عدد</option><option value="بسته">بسته</option><option value="کارتن">کارتن</option><option value="کیلوگرم">کیلوگرم</option><option value="لیتر">لیتر</option></select></div>
+        <div class="form-group"><label>محل / قفسه</label><input type="text" id="productLocation"></div>
+        <div class="form-group"><label>یادداشت</label><textarea id="productNote" rows="2"></textarea></div>
+        <div class="actions-row"><button type="submit" class="btn btn-primary" style="flex:1">ذخیره</button><button type="button" class="btn btn-secondary" onclick="closeProductModal()">انصراف</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="scannerModal">
+    <div class="modal">
+      <div class="modal-header"><h2 id="scannerTitle">اسکن بارکد</h2><button class="close-btn" onclick="closeScanner()">×</button></div>
+      <div class="continuous-toggle" style="margin-bottom:6px">
+        <label class="switch"><input type="checkbox" id="scannerContinuous"><span class="slider"></span></label>
+        <span>اسکن پیوسته بدون توقف (اختیاری)</span>
+      </div>
+      <div class="continuous-toggle" style="margin-bottom:10px">
+        <label class="switch"><input type="checkbox" id="scannerAutoNext" checked onchange="saveScanWorkflowSettings()"><span class="slider"></span></label>
+        <span>پس از ثبت تعداد، آماده اسکن کالای بعدی شود</span>
+      </div>
+      <div id="scanner-container"></div>
+      <div class="actions-row" style="justify-content:center;margin-top:8px">
+        <button class="btn btn-sm btn-secondary" id="torchBtn" onclick="toggleTorch()">🔦 نور</button>
+        <button class="btn btn-sm btn-secondary" onclick="restartCamera()">🔄 راه‌اندازی مجدد</button>
+      </div>
+      <p style="text-align:center;margin-top:8px;font-size:.78rem;color:var(--muted)">بارکد را صاف و نزدیک کادر بگیرید • نور کافی</p>
+      <p style="text-align:center;margin-top:3px;font-size:.75rem;color:var(--muted)">بارکدخوان بلوتوثی یا USB در حالت صفحه‌کلیدی نیز قابل استفاده است؛ پایان اسکن معمولاً با Enter انجام می‌شود.</p>
+      <div id="lastScanInfo" style="text-align:center;margin-top:6px;font-weight:700;font-size:.9rem;min-height:24px"></div>
+      <div id="lastCountedScanCard" style="display:none;margin:8px 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg2);font-size:.86rem">
+        <div style="font-weight:800;color:var(--success);margin-bottom:3px">آخرین کالای ثبت‌شده</div>
+        <div id="lastCountedScanName" style="font-weight:700"></div>
+        <div id="lastCountedScanMeta" style="color:var(--text-soft);font-size:.78rem"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px">
+        <label>ورود دستی بارکد</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="manualBarcode" placeholder="بارکد را تایپ یا با اسکنر بزنید" enterkeyhint="done" style="flex:1"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();submitManualBarcode()}">
+          <button type="button" class="btn btn-primary btn-sm" onclick="submitManualBarcode()">ثبت</button>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="closeScanner()">بستن</button>
+    </div>
+  </div>
+
+  <!-- پنجره ورود تعداد بعد از اسکن -->
+  <div class="modal-overlay" id="qtyModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h2>ورود تعداد</h2>
+        <button class="close-btn" onclick="closeQtyModal(false)">×</button>
+      </div>
+      <div style="text-align:center;margin-bottom:12px">
+        <div id="qtyModalName" style="font-size:1.15rem;font-weight:800;color:var(--primary-deeper)"></div>
+        <div id="qtyModalMeta" class="hint" style="margin-top:4px"></div>
+      </div>
+      <div class="form-group">
+        <label>تعداد شمارش‌شده</label>
+        <div style="display:flex;align-items:center;gap:10px;justify-content:center">
+          <button type="button" class="btn btn-icon" onclick="adjustQtyModal(-1)" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff">−</button>
+          <input type="number" id="qtyModalInput" min="0" step="any" inputmode="decimal"
+            style="width:120px;text-align:center;font-size:1.6rem;font-weight:900;min-height:56px"
+            oninput="updateQtyModalDiff()"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();confirmQtyModal()}">
+          <button type="button" class="btn btn-icon" onclick="adjustQtyModal(1)" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff">＋</button>
+        </div>
+      </div>
+      <div id="qtyModalDiff" style="text-align:center;font-size:.85rem;margin:8px 0;min-height:22px"></div>
+      <div class="actions-row" style="justify-content:center;margin-bottom:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="setQtyModalValue(0)">صفر</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="qtyModalEqBtn" onclick="setQtyModalToSystem()">= سیستم</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="setQtyModalValue(1)">۱</button>
+      </div>
+      <div class="actions-row">
+        <button type="button" class="btn btn-primary" style="flex:1;min-height:52px;font-size:1rem" onclick="confirmQtyModal()">✓ تأیید و ادامه اسکن</button>
+        <button type="button" class="btn btn-secondary" onclick="closeQtyModal(false)">انصراف</button>
+      </div>
+      <p class="hint" style="text-align:center;margin-top:10px">بعد از تأیید، دوربین آماده اسکن کالای بعدی می‌ماند</p>
+    </div>
+  </div>
+
+<script>
+// Defensive storage bootstrap: malformed or unavailable browser storage must not blank the app.
+function safeStorageRead(key, fallback){
+  try {
+    const raw=window.localStorage.getItem(key);
+    if(raw===null)return fallback;
+    const value=JSON.parse(raw);
+    if(key==='anbar_products'&&!Array.isArray(value))throw new Error('products is not an array');
+    if(key==='anbar_audit'&&!Array.isArray(value))throw new Error('audit log is not an array');
+    if(key==='anbar_recent'&&!Array.isArray(value))throw new Error('recent scans is not an array');
+    if(key==='anbar_settings'&&(!value||typeof value!=='object'||Array.isArray(value)))throw new Error('settings is not an object');
+    return value;
+  } catch(err) {
+    console.error('[storage] Could not read '+key,err);
+    try { window.__anbarStorageWarnings=(window.__anbarStorageWarnings||[]).concat(key); } catch(_) {}
+    return fallback;
+  }
+}
+function safeStorageWrite(key,value){
+  try { localStorage.setItem(key,JSON.stringify(value)); return true; }
+  catch(err) { console.error('[storage] Could not write '+key,err); return false; }
+}
+let products=safeStorageRead('anbar_products',[]);
+let settings=safeStorageRead('anbar_settings',{continuousScan:false,autoNextScan:true,soundOnScan:true,vibrateOnScan:true,autoIncrement:true,blindCount:false,btScanner:true,doubleCount:false});
+if(typeof settings.autoNextScan!=='boolean')settings.autoNextScan=true;
+if(typeof settings.continuousScan!=='boolean')settings.continuousScan=false;
+let currentLocation='';
+let btBuffer='';
+let btTimer=null;
+let undoStack=[];
+const UNDO_MAX=50;
+let listLimitCount=50;
+let listLimitProducts=50;
+let searchDebounce=null;
+let auditLog=safeStorageRead('anbar_audit',[]);
+const AUDIT_MAX=500;
+let session=safeStorageRead('anbar_session',null);
+let recentScans=safeStorageRead('anbar_recent',[]);
+let countFilter='all',deferredPrompt=null,html5QrCode=null,scanTargetField=null,lastScannedId=null,codeIndex={},lastScanTime=0,quickMode=false,audioCtx=null;
+// Guard against accidentally scanning the same product immediately after confirming its quantity.
+let lastConfirmedProductId=null,lastConfirmedAt=0;
+const SAME_PRODUCT_SCAN_GUARD_MS=2500;
+let qtyModalProduct=null; // product pending quantity confirmation
+let qtyModalOpen=false;
+
+function playBeep(ok){if(!settings.soundOnScan)return;try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=ok?880:200;g.gain.value=.15;o.start();setTimeout(()=>o.stop(),ok?80:150)}catch{}}
+function rebuildIndex(){codeIndex={};products.forEach((p,i)=>{if(p.code)codeIndex[String(p.code).trim()]=i;if(p.sku)codeIndex[String(p.sku).trim()]=i})}
+
+// Bluetooth / USB barcode scanner (keyboard wedge)
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')&&!e.shiftKey){const tag=(e.target&&e.target.tagName||'').toLowerCase();if(tag!=='input'&&tag!=='textarea'){e.preventDefault();undoLast();return}}
+  if(settings.btScanner===false)return;
+  const tag=(e.target&&e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select'){
+    // allow normal typing in fields, but if rapid Enter from scanner on empty-ish, still ok
+    if(tag==='input'&&e.target.type==='number')return;
+    if(e.key!=='Enter')return;
+  }
+  if(e.key==='Enter'){
+    if(btBuffer.length>=3){
+      e.preventDefault();
+      const code=btBuffer;btBuffer='';
+      if(btTimer){clearTimeout(btTimer);btTimer=null}
+      const st=document.getElementById('btStatus');if(st)st.textContent='اسکن شد: '+code;
+      handleBarcode(code);
+    } else {btBuffer=''}
+    return;
+  }
+  if(e.key.length===1&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+    // only capture if not focused on text inputs (except we already returned for input)
+    if(tag==='input'||tag==='textarea'||tag==='select')return;
+    btBuffer+=e.key;
+    if(btTimer)clearTimeout(btTimer);
+    btTimer=setTimeout(function(){btBuffer=''},80);
+  }
+});
+function handleBarcode(code){
+  code=String(code).trim();
+  if(!code)return;
+  if(guardLocked())return;
+  if(qtyModalOpen)return; // ignore while quantity dialog is open
+  const now=Date.now();
+  if(now-lastScanTime<400)return;
+  lastScanTime=now;
+  if(scanTargetField){
+    const el=document.getElementById(scanTargetField);
+    if(el)el.value=code;
+    playBeep(true);toast('بارکد ثبت شد');
+    return;
+  }
+  const idx=codeIndex[code];
+  if(idx===undefined){
+    playBeep(false);
+    if(navigator.vibrate&&settings.vibrateOnScan)navigator.vibrate([50,30,50]);
+    toast('یافت نشد: '+code,'error');
+    if(confirm('کالایی با بارکد «'+code+'» نیست. اضافه شود؟')){
+      openProductModal();
+      document.getElementById('productCode').value=code;
+      if(currentLocation)document.getElementById('productLocation').value=currentLocation;
+    }
+    return;
+  }
+  const p=products[idx];
+  if(p.id===lastConfirmedProductId && now-lastConfirmedAt<SAME_PRODUCT_SCAN_GUARD_MS){
+    playBeep(false);
+    toast('اسکن تکراری همین کالا نادیده گرفته شد؛ برای شمارش دوباره کمی صبر کنید.','error');
+    return;
+  }
+  if(currentLocation&&!p.location){p.location=currentLocation}
+  playBeep(true);
+  if(navigator.vibrate&&settings.vibrateOnScan)navigator.vibrate(40);
+  openQtyModal(p);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{rebuildIndex();loadSettingsUI();if(!session)startNewSession(true);renderAll();updateHeader();updateSessionUI();updateStorageInfo();autoBackupInfo();loadOperator();updateBlindBadge();refreshLocationFilter();updateUndoBtn();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});window.addEventListener('online',()=>document.getElementById('netBadge').textContent='🟢 آنلاین');window.addEventListener('offline',()=>document.getElementById('netBadge').textContent='🔴 آفلاین');if(!navigator.onLine)document.getElementById('netBadge').textContent='🔴 آفلاین';tryRecoverFromIdb()});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBanner').classList.add('show')});
+function installPWA(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('installBanner').classList.remove('show')})}}
+
+
+function formatAuditTime(iso){
+  try{const d=new Date(iso);return d.toLocaleDateString('fa-IR')+' '+d.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+  catch{return iso}
+}
+function renderAuditLog(){
+  const el=document.getElementById('auditList');
+  if(!el)return;
+  if(!auditLog.length){el.innerHTML='<div class="empty-state" style="padding:12px"><p>رویدادی ثبت نشده</p></div>';return}
+  const list=[...auditLog].reverse().slice(0,100);
+  el.innerHTML=list.map(a=>{
+    let text='';
+    const d=a.detail||{};
+    if(a.action==='count')text=`${esc(d.name||'')} : ${d.prev===null||d.prev===undefined?'—':d.prev} ← ${d.next===null||d.next===undefined?'—':d.next}`;
+    else if(a.action==='import')text=`وارد کردن ${d.count||0} کالا`;
+    else if(a.action==='merge')text=`ادغام از «${esc(d.operator||'')}» — ${d.matched||0} تطبیق`;
+    else if(a.action==='bulk_zero')text=`صفر کردن ${d.count||0} کالای شمارش‌نشده`;
+    else if(a.action==='clear_counts')text=`پاک کردن ${d.count||0} شمارش`;
+    else if(a.action==='apply_system')text=`اعمال شمارش روی سیستم (${d.count||0})`;
+    else if(a.action==='undo')text=`برگشت: ${esc(d.name||d.summary||'')}`;
+    else if(a.action==='session')text='شروع جلسه جدید';
+    else if(a.action==='reset')text='پاک کردن همه داده‌ها';
+    else text=a.action;
+    return `<div class="item" style="padding:8px">
+      <div class="item-header">
+        <div class="item-name" style="font-size:.82rem">${text}</div>
+        <span class="badge badge-new">${esc(a.op)}</span>
+      </div>
+      <div class="item-meta"><span>${formatAuditTime(a.ts)}</span></div>
+    </div>`
+  }).join('');
+}
+function rowsToCSV(rows){if(!rows.length)return '';const keys=Object.keys(rows[0]);const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+keys.map(q).join(',')+'\r\n'+rows.map(r=>keys.map(k=>q(r[k])).join(',')).join('\r\n');}
+function downloadRowsCSV(rows,filename){downloadFile(rowsToCSV(rows),filename,'text/csv;charset=utf-8');}
+// تولید XLSX ساده و کاملاً آفلاین (بدون کتابخانه خارجی): فایل ZIP بدون فشرده‌سازی با سلول‌های متنی/عددی
+function xlsxEsc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+function xlsxCol(n){let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;}
+function xlsxSheetXml(rows){
+  const safeRows=Array.isArray(rows)?rows:[];
+  const xmlRows=safeRows.map((row,ri)=>'<row r="'+(ri+1)+'">'+row.map((v,ci)=>{
+    const ref=xlsxCol(ci+1)+(ri+1);
+    if(typeof v==='number'&&Number.isFinite(v))return '<c r="'+ref+'"><v>'+v+'</v></c>';
+    if(typeof v==='boolean')return '<c r="'+ref+'" t="b"><v>'+(v?'1':'0')+'</v></c>';
+    return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xlsxEsc(v==null?'':v)+'</t></is></c>';
+  }).join('')+'</row>').join('');
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+xmlRows+'</sheetData></worksheet>';
+}
+function xlsxCrc32(bytes){let crc=-1;for(let i=0;i<bytes.length;i++){crc^=bytes[i];for(let j=0;j<8;j++)crc=(crc>>>1)^((crc&1)?0xEDB88320:0);}return (crc^-1)>>>0;}
+function xlsxU16(n){return [n&255,(n>>>8)&255];}
+function xlsxU32(n){return [n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];}
+function xlsxJoin(parts){let size=0;for(const a of parts)size+=a.length;const out=new Uint8Array(size);let pos=0;for(const a of parts){out.set(a,pos);pos+=a.length;}return out;}
+function buildOfflineXlsx(sheets){
+  const enc=new TextEncoder();
+  const clean=(sheets||[]).slice(0,20).map((sh,i)=>({name:String(sh.name||('Sheet'+(i+1))).replace(/[\\/*?:\[\]]/g,' ').slice(0,31)||('Sheet'+(i+1)),rows:sh.rows||[]}));
+  if(!clean.length)throw new Error('No sheets');
+  const sheetOverrides=clean.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('');
+  const files=[];
+  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheetOverrides+'</Types>']);
+  files.push(['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
+  files.push(['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+clean.map((sh,i)=>'<sheet name="'+xlsxEsc(sh.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>']);
+  files.push(['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+clean.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(clean.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>']);
+  files.push(['xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']);
+  clean.forEach((sh,i)=>files.push(['xl/worksheets/sheet'+(i+1)+'.xml',xlsxSheetXml(sh.rows)]));
+  const local=[],central=[];let offset=0;
+  for(const [name,content] of files){const nb=enc.encode(name),data=enc.encode(content),crc=xlsxCrc32(data);
+    const lh=new Uint8Array([...xlsxU32(0x04034b50),...xlsxU16(20),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU32(crc),...xlsxU32(data.length),...xlsxU32(data.length),...xlsxU16(nb.length),...xlsxU16(0)]);
+    local.push(lh,nb,data);
+    const ch=new Uint8Array([...xlsxU32(0x02014b50),...xlsxU16(20),...xlsxU16(20),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU32(crc),...xlsxU32(data.length),...xlsxU32(data.length),...xlsxU16(nb.length),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU16(0),...xlsxU32(0),...xlsxU32(offset)]);
+    central.push(ch,nb);offset+=lh.length+nb.length+data.length;
+  }
+  const localBytes=xlsxJoin(local),centralBytes=xlsxJoin(central);
+  const end=new Uint8Array([...xlsxU32(0x06054b50),...xlsxU16(0),...xlsxU16(0),...xlsxU16(files.length),...xlsxU16(files.length),...xlsxU32(centralBytes.length),...xlsxU32(localBytes.length),...xlsxU16(0)]);
+  return xlsxJoin([localBytes,centralBytes,end]);
+}
+function saveOfflineXlsx(sheets,filename){
+  try{
+    const bytes=buildOfflineXlsx(sheets);
+    if(window.AzarAndroid&&typeof window.AzarAndroid.saveBase64File==='function'){
+      let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+      window.AzarAndroid.saveBase64File(filename,btoa(binary));return true;
+    }
+    const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);return true;
+  }catch(err){console.error('Offline XLSX export failed',err);toast('ساخت فایل اکسل ناموفق بود','error');return false;}
+}
+function rowsToSheet(rows){const keys=rows.length?Object.keys(rows[0]):[];return [keys,...rows.map(r=>keys.map(k=>r[k]??''))];}
+
+function saveWorkbookFile(workbook,filename){
+  if(window.AzarAndroid&&typeof window.AzarAndroid.saveBase64File==='function'){
+    try{
+      const base64=XLSX.write(workbook,{bookType:'xlsx',type:'base64'});
+      window.AzarAndroid.saveBase64File(filename,base64);
+      return true;
+    }catch(err){console.error('Native XLSX export failed',err);toast('ساخت فایل اکسل ناموفق بود','error');return false;}
+  }
+  XLSX.writeFile(workbook,filename);
+  return true;
+}
+function exportAuditLog(){
+  if(!auditLog.length)return toast('لاگی وجود ندارد');
+  const rows=auditLog.map(a=>({
+    'زمان':a.ts,
+    'کاربر':a.op,
+    'عملیات':a.action,
+    'جزئیات':JSON.stringify(a.detail||{})
+  }));
+  if(!window.XLSX){if(saveOfflineXlsx([{name:'لاگ',rows:rowsToSheet(rows)}],`anbar-audit-${dateStr()}.xlsx`))toast('فایل اکسل لاگ ذخیره شد','success');return;}
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'لاگ');
+  if(!saveWorkbookFile(wb,`anbar-audit-${dateStr()}.xlsx`))return;
+  toast('لاگ دانلود شد','success');
+}
+function clearAuditLog(){
+  if(!confirm('کل لاگ حسابرسی پاک شود؟'))return;
+  auditLog=[];
+  saveAudit();
+  renderAuditLog();
+  toast('لاگ پاک شد');
+}
+
+function pushUndo(entry){
+  undoStack.push(entry);
+  if(undoStack.length>UNDO_MAX)undoStack.shift();
+  updateUndoBtn();
+}
+function updateUndoBtn(){
+  const b=document.getElementById('undoBtn');
+  if(b){b.disabled=!undoStack.length;b.style.opacity=undoStack.length?1:.4}
+}
+function undoLast(){
+  if(!undoStack.length){toast('چیزی برای برگشت نیست');return}
+  const u=undoStack.pop();
+  updateUndoBtn();
+  if(u.type==='count'){
+    const p=products.find(x=>x.id===u.id);
+    if(!p){toast('کالا یافت نشد','error');return}
+    p.countedQty=u.prev;
+    save();
+    lastScannedId=u.id;
+    showScanResult(p);
+    updateHeader();renderCountList();renderRecent();
+    logAudit('undo',{name:p.name,restored:u.prev});toast('برگشت: '+p.name+' ← '+(u.prev===null?'—':u.prev));
+  } else if(u.type==='count2'){
+    const p=products.find(x=>x.id===u.id);
+    if(!p){toast('کالا یافت نشد','error');return}
+    p.countedQty2=u.prev;
+    save();lastScannedId=u.id;showScanResult(p);updateHeader();renderCountList();
+    logAudit('undo',{name:p.name,restored:u.prev,phase:2});toast('برگشت فاز۲: '+p.name);
+  } else if(u.type==='bulk'){
+    u.items.forEach(it=>{const p=products.find(x=>x.id===it.id);if(p)p.countedQty=it.prev});
+    save();updateHeader();renderCountList();renderReport();
+    toast('عملیات دسته‌ای برگشت داده شد');
+  }
+}
+function recordCountChange(p,prev){
+  pushUndo({type:'count',id:p.id,prev:prev,next:p.countedQty,name:p.name,ts:Date.now()});
+  logAudit('count',{id:p.id,name:p.name,code:p.code||'',prev:prev,next:p.countedQty});
+}
+
+function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(()=>t.classList.remove('show'),2500)}
+function updateHeader(){const total=products.length;const counted=isDoubleCount()&&countPhase()===2?products.filter(p=>p.countedQty2!=null&&p.countedQty2!==undefined).length:products.filter(p=>p.countedQty!==null).length;const pct=total?Math.round(counted/total*100):0;document.getElementById('headerSubtitle').textContent=total?`${counted.toLocaleString('fa-IR')} از ${total.toLocaleString('fa-IR')} شمارش شده`:'آماده برای شروع';const wrap=document.getElementById('progressWrap');if(total>0){wrap.style.display='block';document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressLabel').textContent=pct+'٪';document.getElementById('progressCount').textContent=`${counted} / ${total}`}else wrap.style.display='none'}
+function updateSessionUI(){if(session){const d=document.getElementById('sessionDate');if(d)d.textContent='جلسه: '+new Date(session.startedAt).toLocaleDateString('fa-IR')+' '+new Date(session.startedAt).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})}updateSessionLockUI()}
+function startNewSession(silent){if(!silent&&products.some(p=>p.countedQty!==null)){if(!confirm('شمارش‌های فعلی پاک شود و جلسه جدید شروع شود؟'))return;products.forEach(p=>{p.countedQty=null});save()}session={startedAt:new Date().toISOString(),id:Date.now().toString(36),closedAt:null,closedBy:null};localStorage.setItem('anbar_session',JSON.stringify(session));recentScans=[];saveRecent();updateSessionUI();renderAll();updateHeader();if(!silent){logAudit('session',{});toast('جلسه جدید شروع شد','success')}}
+function updateStorageInfo(){const size=new Blob([JSON.stringify(products)]).size;document.getElementById('storageInfo').textContent=`${products.length.toLocaleString('fa-IR')} کالا • حدود ${(size/1024).toFixed(1)} کیلوبایت`}
+function showPage(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');document.querySelector(`.nav button[data-page="${page}"]`).classList.add('active');if(page==='report'){renderReport();if(typeof renderReadiness==='function')renderReadiness();if(typeof renderAuditLog==='function')renderAuditLog()}if(page==='count'){renderCountList();renderRecent()}if(page==='products')renderProductsList();if(page==='settings')updateStorageInfo()}
+
+function handleDrop(e){e.preventDefault();document.getElementById('importBox').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)processExcelFile(f)}
+function importExcel(e){const f=e.target.files[0];if(f)processExcelFile(f);e.target.value=''}
+function parseCSVText(text){
+  text=String(text||'').replace(/^\uFEFF/,'');
+  const first=(text.split(/\r?\n/,1)[0]||'');
+  const delimiter=(first.split(';').length>first.split(',').length)?';':',';
+  const rows=[];let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}
+    else if(ch==='"'){quoted=!quoted;}
+    else if(ch===delimiter&&!quoted){row.push(cell);cell='';}
+    else if((ch==='\n'||ch==='\r')&&!quoted){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()!==''))rows.push(row);row=[];cell='';}
+    else cell+=ch;
+  }
+  row.push(cell);if(row.some(v=>v.trim()!==''))rows.push(row);
+  if(rows.length<2)return [];
+  const headers=rows.shift().map((h,i)=>String(h||'').trim()||('ستون '+(i+1)));
+  return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,String(r[i]??'').trim()])));
+}
+// خواندن XLSX آفلاین با ZIP داخلی فایل و DecompressionStream مرورگر؛ بدون کتابخانه خارجی
+function xlsxColIndex(ref){const m=String(ref||'').match(/^([A-Z]+)/i);if(!m)return 0;let n=0;for(const c of m[1].toUpperCase())n=n*26+c.charCodeAt(0)-64;return n-1;}
+function xmlText(el,tag){const n=el.getElementsByTagName(tag);let out='';for(let i=0;i<n.length;i++)out+=n[i].textContent||'';return out;}
+async function unzipXlsxEntries(buffer){
+  const u=new Uint8Array(buffer),dv=new DataView(buffer);let eocd=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-65557);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)throw new Error('ساختار فایل XLSX معتبر نیست');
+  const count=dv.getUint16(eocd+10,true),cdOffset=dv.getUint32(eocd+16,true),entries={};let pos=cdOffset;
+  for(let i=0;i<count;i++){
+    if(dv.getUint32(pos,true)!==0x02014b50)throw new Error('فهرست فایل اکسل خراب است');
+    const method=dv.getUint16(pos+10,true),csize=dv.getUint32(pos+20,true),nlen=dv.getUint16(pos+28,true),elen=dv.getUint16(pos+30,true),clen=dv.getUint16(pos+32,true),local=dv.getUint32(pos+42,true);
+    const name=new TextDecoder().decode(u.slice(pos+46,pos+46+nlen));
+    const ln=dv.getUint16(local+26,true),le=dv.getUint16(local+28,true),dataStart=local+30+ln+le,compressed=u.slice(dataStart,dataStart+csize);
+    let out;
+    if(method===0)out=compressed;
+    else if(method===8){if(typeof DecompressionStream==='undefined')throw new Error('مرورگر این گوشی بازکردن XLSX فشرده را پشتیبانی نمی‌کند؛ فایل را به CSV UTF-8 تبدیل کنید');try{out=new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());}catch(e){throw new Error('خواندن فایل اکسل فشرده ناموفق بود؛ فایل را با Excel به CSV UTF-8 تبدیل کنید');}}
+    else throw new Error('روش فشرده‌سازی این فایل اکسل پشتیبانی نمی‌شود');
+    entries[name]=new TextDecoder('utf-8').decode(out);pos+=46+nlen+elen+clen;
+  }
+  return entries;
+}
+async function getOfflineXlsxSheets(buffer){
+  const z=await unzipXlsxEntries(buffer),parser=new DOMParser();
+  const getXml=(path)=>{if(!z[path])throw new Error('بخش '+path+' در فایل اکسل پیدا نشد');const d=parser.parseFromString(z[path],'application/xml');if(d.querySelector('parsererror'))throw new Error('ساختار XML اکسل نامعتبر است');return d;};
+  if(!z['xl/workbook.xml']||!z['xl/_rels/workbook.xml.rels'])return [{name:'Sheet1',path:'xl/worksheets/sheet1.xml'}];
+  const wb=getXml('xl/workbook.xml'),rels=getXml('xl/_rels/workbook.xml.rels');
+  return Array.from(wb.getElementsByTagName('sheet')).map((sh,i)=>{
+    const rid=sh.getAttribute('r:id')||sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    const rel=Array.from(rels.getElementsByTagName('Relationship')).find(x=>x.getAttribute('Id')===rid);
+    let target=rel?(rel.getAttribute('Target')||''):'worksheets/sheet'+(i+1)+'.xml';
+    let path=target.startsWith('/')?target.slice(1):('xl/'+target).replace(/\/\.\//g,'/');
+    path=path.replace(/^xl\/\.\.\//,'');
+    return {name:sh.getAttribute('name')||('Sheet'+(i+1)),path};
+  });
+}
+function chooseImportSheet(sheetNames){
+  if(!sheetNames||sheetNames.length<=1)return Promise.resolve(sheetNames&&sheetNames[0]?sheetNames[0]:null);
+  return new Promise(resolve=>{
+    let modal=document.getElementById('importSheetModal');
+    if(!modal){modal=document.createElement('div');modal.id='importSheetModal';modal.className='modal-overlay';modal.style.zIndex='10001';document.body.appendChild(modal);}
+    modal.innerHTML=`<div class="modal" style="max-width:520px;max-height:85vh;overflow:auto"><div class="modal-header"><h2>انتخاب برگه اکسل</h2><button class="close-btn" id="sheetClose">×</button></div><p class="hint">این فایل چند برگه دارد. برگه‌ای را انتخاب کنید که فهرست کالاها در آن قرار دارد.</p><div class="form-group"><label>برگه موردنظر</label><select id="sheetChoice" class="form-control">${sheetNames.map((x,i)=>`<option value="${i}">${esc(x.name)}</option>`).join('')}</select></div><div class="actions-row" style="margin-top:16px"><button class="btn btn-secondary" id="sheetCancel">انصراف</button><button class="btn btn-primary" id="sheetConfirm">انتخاب برگه</button></div></div>`;
+    const finish=v=>{modal.classList.remove('show');resolve(v)};
+    modal.querySelector('#sheetConfirm').onclick=()=>finish(sheetNames[Number(modal.querySelector('#sheetChoice').value)]||null);
+    modal.querySelector('#sheetCancel').onclick=()=>finish(null);modal.querySelector('#sheetClose').onclick=()=>finish(null);modal.classList.add('show');
+  });
+}
+async function parseOfflineXlsx(buffer, requestedSheetPath){
+  const z=await unzipXlsxEntries(buffer),parser=new DOMParser();
+  const getXml=(path)=>{if(!z[path])throw new Error('بخش '+path+' در فایل اکسل پیدا نشد');const d=parser.parseFromString(z[path],'application/xml');if(d.querySelector('parsererror'))throw new Error('ساختار XML اکسل نامعتبر است');return d;};
+  let shared=[];if(z['xl/sharedStrings.xml']){const d=getXml('xl/sharedStrings.xml');shared=Array.from(d.getElementsByTagName('si')).map(si=>xmlText(si,'t'));}
+  let sheetPath=requestedSheetPath||'xl/worksheets/sheet1.xml';
+  if(!requestedSheetPath&&z['xl/workbook.xml']&&z['xl/_rels/workbook.xml.rels']){const sheets=await getOfflineXlsxSheets(buffer);sheetPath=(sheets[0]||{}).path||sheetPath;}
+  const sheet=getXml(sheetPath),xmlRows=Array.from(sheet.getElementsByTagName('row'));if(!xmlRows.length)return [];
+  const matrix=xmlRows.map(r=>{const arr=[];for(const c of Array.from(r.getElementsByTagName('c'))){const idx=xlsxColIndex(c.getAttribute('r'));let val='';const type=c.getAttribute('t');if(type==='s'){const v=c.getElementsByTagName('v')[0];val=v?String(shared[Number(v.textContent)]??''):'';}else if(type==='inlineStr')val=xmlText(c,'t');else {const v=c.getElementsByTagName('v')[0];val=v?(v.textContent||''):'';}arr[idx]=val;}return arr;});
+  const max=matrix.reduce((m,r)=>Math.max(m,r.length),0),headers=(matrix.shift()||[]);for(let i=0;i<max;i++)if(headers[i]==null||headers[i]==='')headers[i]='ستون '+(i+1);
+  return matrix.map(r=>Object.fromEntries(headers.map((h,i)=>[String(h),String(r[i]??'').trim()]))).filter(r=>Object.values(r).some(v=>v!==''));
+}
+// تشخیص پویا و قابل ویرایش ستون‌ها برای خروجی‌های هلو، سپیدار و سایر نرم‌افزارها
+function normalizeImportHeader(value){return String(value??'').toLowerCase().replace(/[\u0640\u064b-\u065f\u0670]/g,'').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\u200c/g,'').replace(/[^a-z0-9آ-ی]/g,'');}
+function parseImportNumber(value){let s=String(value??'').trim().replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٬,\s]/g,'').replace(/[٫]/g,'.');if(!s)return 0;const n=Number(s);return Number.isFinite(n)?n:0;}
+const IMPORT_FIELD_ALIASES={
+ name:['نامکالا','ناممحصول','شرحکالا','شرح','عنوانکالا','عنوان','نام','کالا','نامکالا','ناممحصول','productname','itemname','description','product'],
+ code:['بارکدکالا','بارکد','بارکالا','barcode','ean','gtin','کدبارکد'],
+ sku:['کدداخلی','کدکالا','کالاكد','کدکالا','شناسهکالا','کدداخلیکالا','کد','sku','itemcode','productcode','کدحسابداری'],
+ qty:['موجودیدرتمامیانبارها','موجودیتمامیانبارها','موجودیسیستم','موجودیانبار','موجودی','تعدادموجود','تعداد','ماندهتعداد','مقدارموجودی','qty','quantity','stock',' موجودی'],
+ price:['قیمتواحد','قیمتخرید','بهایتمامشده','بهایواحد','فیخرید','قیمت','بها','فی','مبلغواحد','نرخ','price','unitprice','purchaseprice','cost'],
+ unit:['واحداندازهگیری','واحدسنجش','واحد','مقیاس','unit'],
+ location:['محلانبار','نامانبار','انبار','قفسه','محلنگهداری','location','warehouse']
+};
+function suggestImportColumn(keys,field){const norm=keys.map(k=>({key:k,n:normalizeImportHeader(k)}));const aliases=IMPORT_FIELD_ALIASES[field].map(normalizeImportHeader).sort((a,b)=>b.length-a.length);for(const a of aliases){const exact=norm.find(x=>x.n===a);if(exact)return exact.key;}for(const a of aliases){if(a.length>=4){const hit=norm.find(x=>x.n.includes(a));if(hit)return hit.key;}}return '';}
+function chooseImportMapping(rows){
+ const keys=Object.keys(rows[0]||{});const fields=[['name','نام کالا *',true],['code','بارکد',false],['sku','کد کالا',false],['qty','موجودی سیستم',false],['price','قیمت/بهای واحد',false],['unit','واحد',false],['location','انبار/محل',false]];
+ const guess={};fields.forEach(([f])=>guess[f]=suggestImportColumn(keys,f));
+ // If header mapping is already clear, still show a compact confirmation so incorrect assumptions can be corrected before replacing inventory.
+ return new Promise(resolve=>{
+  let modal=document.getElementById('importMappingModal');
+  if(!modal){modal=document.createElement('div');modal.id='importMappingModal';modal.className='modal-overlay';modal.style.zIndex='9999';document.body.appendChild(modal);}
+  const options='<option value="">— انتخاب نشود —</option>'+keys.map(k=>`<option value="${esc(k).replace(/"/g,'&quot;')}">${esc(k)}</option>`).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:620px;max-height:90vh;overflow:auto"><div class="modal-header"><h2>تشخیص ستون‌های فایل</h2><button class="close-btn" id="mappingClose">×</button></div><p class="hint">ستون‌ها به‌صورت خودکار تشخیص داده شده‌اند. قبل از ورود، نگاشت را بررسی کنید. این روش برای فایل‌های هلو، سپیدار و سایر فایل‌های اکسل قابل تنظیم است.</p><div class="form-group"><label>قالب پیشنهادی</label><select id="mappingProfile" class="form-control"><option value="auto">تشخیص خودکار</option><option value="holoo">خروجی هلو (پیشنهاد اولیه)</option><option value="sepidar">خروجی سپیدار (پیشنهاد اولیه)</option><option value="manual">تنظیم دستی</option></select><p class="hint">انتخاب نام نرم‌افزار فقط پیشنهاد ستون‌ها را تنظیم می‌کند؛ نام ستون‌های واقعی فایل ملاک نهایی است.</p></div><div id="mappingFields" style="display:grid;grid-template-columns:1fr;gap:10px"></div><div style="margin-top:12px;padding:10px;border-radius:10px;background:var(--primary-soft);font-size:.85rem"><b>نمونه ردیف اول:</b><div id="mappingSample" style="margin-top:5px;overflow-wrap:anywhere"></div></div><div class="actions-row" style="margin-top:16px"><button class="btn btn-secondary" id="mappingCancel">انصراف</button><button class="btn btn-primary" id="mappingConfirm">تأیید ستون‌ها و ورود</button></div></div>`;
+  const fieldsEl=modal.querySelector('#mappingFields');
+  fieldsEl.innerHTML=fields.map(([f,label,required])=>`<div class="form-group" style="margin:0"><label>${label}${required?' (ضروری)':''}</label><select data-map-field="${f}" class="form-control">${options}</select></div>`).join('');
+  fields.forEach(([f])=>{const sel=fieldsEl.querySelector(`[data-map-field="${f}"]`);sel.value=guess[f]||'';});
+  const sample=()=>{const map={};fields.forEach(([f])=>map[f]=fieldsEl.querySelector(`[data-map-field="${f}"]`).value);const row=rows[0]||{};modal.querySelector('#mappingSample').textContent=[['نام',map.name],['بارکد',map.code],['کد',map.sku],['موجودی',map.qty],['قیمت',map.price]].map(([l,k])=>k?`${l}: ${String(row[k]??'—')}`:`${l}: —`).join(' | ');};
+  const setProfile=profile=>{fields.forEach(([f])=>{const sel=fieldsEl.querySelector(`[data-map-field="${f}"]`);let suggestion=suggestImportColumn(keys,f);if(profile==='holoo'&&f==='qty')suggestion=keys.find(k=>/موجودی|تعداد|مانده/i.test(normalizeImportHeader(k)))||suggestion;if(profile==='holoo'&&f==='price')suggestion=keys.find(k=>/قیمتخرید|فیخرید|بهایتمامشده|قیمتواحد|قیمت|فی/i.test(normalizeImportHeader(k)))||suggestion;if(profile==='sepidar'&&f==='qty')suggestion=keys.find(k=>/مقدارموجودی|موجودی|ماندهتعداد|تعداد/i.test(normalizeImportHeader(k)))||suggestion;if(profile==='sepidar'&&f==='price')suggestion=keys.find(k=>/بهایواحد|بهایتمامشده|فی|قیمتواحد|قیمتخرید|قیمت/i.test(normalizeImportHeader(k)))||suggestion;if(profile!=='manual'&&suggestion)sel.value=suggestion;});sample();};
+  modal.querySelector('#mappingProfile').addEventListener('change',e=>setProfile(e.target.value));fieldsEl.addEventListener('change',sample);sample();modal.classList.add('show');
+  const finish=result=>{modal.classList.remove('show');modal.querySelector('#mappingConfirm').onclick=null;modal.querySelector('#mappingCancel').onclick=null;modal.querySelector('#mappingClose').onclick=null;resolve(result);};
+  modal.querySelector('#mappingConfirm').onclick=()=>{const m={};fields.forEach(([f])=>m[{name:'name',code:'code',sku:'sku',qty:'qty',price:'price',unit:'unit',location:'location'}[f]]=fieldsEl.querySelector(`[data-map-field="${f}"]`).value||null);if(!m.name&&!m.code&&!m.sku){toast('حداقل نام یا بارکد یا کد کالا را انتخاب کنید','error');return;}finish({nameKey:m.name,codeKey:m.code,skuKey:m.sku,qtyKey:m.qty,priceKey:m.price,unitKey:m.unit,locationKey:m.location});};
+  modal.querySelector('#mappingCancel').onclick=()=>finish(null);modal.querySelector('#mappingClose').onclick=()=>finish(null);
+ });
+}
+function chooseImportPreview(items, stats, errorRows=[]){
+ return new Promise(resolve=>{
+  let modal=document.getElementById('importPreviewModal');
+  if(!modal){modal=document.createElement('div');modal.id='importPreviewModal';modal.className='modal-overlay';modal.style.zIndex='9998';document.body.appendChild(modal);}
+  const shown=items.slice(0,10);
+  const rows=shown.map((p,i)=>`<tr><td>${(i+1).toLocaleString('fa-IR')}</td><td>${esc(p.name||'')}</td><td>${esc(p.code||p.sku||'')}</td><td>${Number(p.systemQty||0).toLocaleString('fa-IR')}</td><td>${Number(p.price||0).toLocaleString('fa-IR')}</td></tr>`).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:850px;max-height:90vh;overflow:auto"><div class="modal-header"><h2>پیش‌نمایش و کنترل اطلاعات</h2><button class="close-btn" id="previewClose">×</button></div><p class="hint">قبل از تغییر فهرست فعلی، نمونه داده‌های آماده ورود را بررسی کنید.</p><div class="card" style="padding:12px;margin:10px 0"><b>خلاصه بررسی</b><p class="hint" style="margin:6px 0 0">قابل ورود: ${stats.valid.toLocaleString('fa-IR')} • ردیف خالی: ${stats.skipped.toLocaleString('fa-IR')} • مقدار عددی نامعتبر و حذف‌شده: ${stats.invalid.toLocaleString('fa-IR')} • تکراری داخل فایل: ${stats.duplicates.toLocaleString('fa-IR')}</p>${stats.invalid?'<p style="color:var(--danger,#b42318);margin:8px 0 0">ردیف‌هایی که تعداد یا قیمت آن‌ها عدد معتبر نیست، برای جلوگیری از ورود اشتباه حذف شده‌اند. فایل مبدأ را بررسی کنید.</p>':''}</div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:560px"><thead><tr><th style="text-align:right;padding:8px;border-bottom:1px solid var(--border)">ردیف</th><th style="text-align:right;padding:8px;border-bottom:1px solid var(--border)">نام کالا</th><th style="text-align:right;padding:8px;border-bottom:1px solid var(--border)">بارکد/کد</th><th style="text-align:right;padding:8px;border-bottom:1px solid var(--border)">موجودی</th><th style="text-align:right;padding:8px;border-bottom:1px solid var(--border)">قیمت واحد</th></tr></thead><tbody>${rows}</tbody></table></div><p class="hint">${items.length>10?`۱۰ ردیف از ${items.length.toLocaleString('fa-IR')} ردیف نمایش داده شده است.`:'تمام ردیف‌های قابل ورود در پیش‌نمایش نمایش داده شده‌اند.'}</p><div class="actions-row" style="margin-top:16px">${errorRows.length?'<button class="btn btn-secondary" id="previewErrorReport">دانلود گزارش ردیف‌های ردشده</button>':''}<button class="btn btn-secondary" id="previewCancel">انصراف</button><button class="btn btn-primary" id="previewConfirm" ${items.length?'':'disabled'}>تأیید پیش‌نمایش و ادامه</button></div></div>`;
+  const finish=v=>{modal.classList.remove('show');resolve(v)};
+  modal.querySelector('#previewConfirm').onclick=()=>finish(true);modal.querySelector('#previewCancel').onclick=()=>finish(false);modal.querySelector('#previewClose').onclick=()=>finish(false);
+  const reportBtn=modal.querySelector('#previewErrorReport');if(reportBtn)reportBtn.onclick=()=>downloadRowsCSV(errorRows.map(x=>({'شماره ردیف فایل':x.row,'نام کالا':x.name,'بارکد':x.code,'کد کالا':x.sku,'موجودی خام':x.qtyRaw,'قیمت خام':x.priceRaw,'علت رد شدن':x.reason})),`azar-import-errors-${dateStr()}.csv`);
+  modal.classList.add('show');
+ });
+}
+function parseImportNumberStrict(value){
+ const raw=String(value??'').trim();if(!raw)return {valid:true,value:0,blank:true};
+ const normalized=raw.replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٬,\s]/g,'').replace(/[٫]/g,'.');
+ if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized))return {valid:false,value:0,blank:false};
+ const n=Number(normalized);return {valid:Number.isFinite(n),value:Number.isFinite(n)?n:0,blank:false};
+}
+function chooseImportMode(existingCount, incomingCount, duplicateCount){
+ return new Promise(resolve=>{
+  let modal=document.getElementById('importModeModal');
+  if(!modal){modal=document.createElement('div');modal.id='importModeModal';modal.className='modal-overlay';modal.style.zIndex='10000';document.body.appendChild(modal);}
+  modal.innerHTML=`<div class="modal" style="max-width:560px;max-height:90vh;overflow:auto"><div class="modal-header"><h2>روش ورود کالاها</h2><button class="close-btn" id="importModeClose">×</button></div><p class="hint">فایل بررسی شد. قبل از اعمال، روش ورود را انتخاب کنید.</p><div class="card" style="padding:12px;margin:10px 0"><b>خلاصه فایل</b><p class="hint" style="margin:6px 0 0">کالاهای قابل ورود: ${incomingCount.toLocaleString('fa-IR')} • تکراری‌های داخل فایل: ${duplicateCount.toLocaleString('fa-IR')} • کالاهای فعلی: ${existingCount.toLocaleString('fa-IR')}</p></div><label class="form-group" style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px"><input type="radio" name="importMode" value="merge" checked style="margin-top:4px"><span><b>ادغام با فهرست فعلی (پیشنهادی)</b><br><small class="hint">کالاهای همسان به‌روزرسانی می‌شوند و کالاهای جدید اضافه می‌شوند.</small></span></label><label class="form-group" style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px"><input type="radio" name="importMode" value="replace" style="margin-top:4px"><span><b>جایگزینی کامل فهرست</b><br><small class="hint">تمام فهرست فعلی با اطلاعات فایل جایگزین می‌شود؛ قبل از ادامه نسخه پشتیبان بگیرید.</small></span></label><div class="actions-row" style="margin-top:16px"><button class="btn btn-secondary" id="importModeCancel">انصراف</button><button class="btn btn-primary" id="importModeConfirm">ادامه و ورود</button></div></div>`;
+  const finish=v=>{modal.classList.remove('show');modal.querySelector('#importModeConfirm').onclick=null;modal.querySelector('#importModeCancel').onclick=null;modal.querySelector('#importModeClose').onclick=null;resolve(v)};
+  modal.querySelector('#importModeConfirm').onclick=()=>{const selected=modal.querySelector('input[name="importMode"]:checked');const mode=selected?selected.value:'merge';if(mode==='replace'&&!confirm('هشدار: تمام کالاهای فعلی حذف و با فایل جایگزین می‌شوند. آیا نسخه پشتیبان دارید و ادامه می‌دهید؟'))return;finish(mode)};
+  modal.querySelector('#importModeCancel').onclick=()=>finish(null);modal.querySelector('#importModeClose').onclick=()=>finish(null);modal.classList.add('show');
+ });
+}
+function importIdentity(row){const code=String(row.code||'').trim().toLowerCase(),sku=String(row.sku||'').trim().toLowerCase(),name=normalizeImportHeader(row.name||'');return code?`b:${code}`:sku?`s:${sku}`:name?`n:${name}`:'';}
+function processExcelFile(file){
+  const status=document.getElementById('importStatus'),progress=document.getElementById('importProgress');
+  progress.style.display='block';progress.querySelector('div').style.width='15%';status.textContent='در حال خواندن فایل...';
+  const reader=new FileReader();
+  reader.onload=async ev=>{try{
+    progress.querySelector('div').style.width='35%';let rows=[];
+    const isCsv=/\.(csv|txt)$/i.test(file.name||'');
+    if(isCsv)rows=parseCSVText(ev.target.result);
+    else if(window.XLSX){const data=new Uint8Array(ev.target.result),wb=XLSX.read(data,{type:'array'});const selected=await chooseImportSheet(wb.SheetNames.map((name,i)=>({name,path:name})));if(!selected){status.textContent='انتخاب برگه لغو شد';progress.style.display='none';return;}const sheet=wb.Sheets[selected.path];rows=XLSX.utils.sheet_to_json(sheet,{defval:''});}
+    else if(/\.xlsx$/i.test(file.name||'')){status.textContent='در حال بازکردن فایل Excel آفلاین...';const sheets=await getOfflineXlsxSheets(ev.target.result);const selected=await chooseImportSheet(sheets);if(!selected){status.textContent='انتخاب برگه لغو شد';progress.style.display='none';return;}rows=await parseOfflineXlsx(ev.target.result,selected.path);}
+    else {throw new Error('این قالب پشتیبانی نمی‌شود. فایل XLSX یا CSV UTF-8 انتخاب کنید. فایل XLS قدیمی را ابتدا به XLSX تبدیل کنید.');}
+    if(!rows.length){status.textContent='فایل خالی است یا ردیف عنوان و اطلاعات پیدا نشد';progress.style.display='none';return;}
+    const mapping=await chooseImportMapping(rows);
+    if(!mapping){status.textContent='ورود فایل لغو شد';progress.style.display='none';return;}
+    const {skuKey,codeKey,nameKey,qtyKey,priceKey,unitKey,locationKey}=mapping;
+    if(!nameKey&&!codeKey&&!skuKey){status.textContent='ستون نام، بارکد یا کد کالا مشخص نشده است';progress.style.display='none';return;}
+    const np=[],seen=new Map(),errorRows=[];let skipped=0,duplicateCount=0,invalidQty=0;
+    rows.forEach((row,idx)=>{
+      const name=String(row[nameKey]??'').trim(),code=String(row[codeKey]??'').trim(),sku=String(row[skuKey]??'').trim();
+      if(!name&&!code&&!sku){skipped++;errorRows.push({row:idx+2,name:'',code:'',sku:'',qtyRaw:'',priceRaw:'',reason:'ردیف خالی است یا نام/کد/بارکد ندارد'});return;}
+      const qtyRaw=qtyKey?row[qtyKey]:'',priceRaw=priceKey?row[priceKey]:'';
+      const q=qtyKey?parseImportNumberStrict(qtyRaw):{valid:true,value:0};
+      const pr=priceKey?parseImportNumberStrict(priceRaw):{valid:true,value:0};
+      if(!q.valid||!pr.valid){invalidQty++;errorRows.push({row:idx+2,name,code,sku,qtyRaw:String(qtyRaw??''),priceRaw:String(priceRaw??''),reason:!q.valid&&!pr.valid?'موجودی و قیمت عدد معتبر نیستند':!q.valid?'موجودی عدد معتبر نیست':'قیمت عدد معتبر نیست'});return;}
+      const item={id:'i'+idx+'_'+Date.now().toString(36),name:name||('کالای '+(code||sku)),code:code||sku,sku:sku,unit:String(row[unitKey]??'عدد').trim()||'عدد',systemQty:q.value,price:pr.value,location:String(row[locationKey]??'').trim(),note:'',countedQty:null,createdAt:new Date().toISOString()};
+      const identity=importIdentity(item);if(identity&&seen.has(identity)){duplicateCount++;errorRows.push({row:idx+2,name,code,sku,qtyRaw:String(qtyRaw??''),priceRaw:String(priceRaw??''),reason:'ردیف تکراری داخل فایل؛ ردیف تکراری بعدی نادیده گرفته شد'});const prior=seen.get(identity);if(!prior.name&&item.name)prior.name=item.name;if(!prior.code&&item.code)prior.code=item.code;if(!prior.sku&&item.sku)prior.sku=item.sku;if(!prior.location&&item.location)prior.location=item.location;return;}
+      if(identity)seen.set(identity,item);np.push(item);
+    });
+    if(!np.length){status.textContent=invalidQty?'هیچ ردیف قابل ورود باقی نماند؛ تعداد/قیمت نامعتبر را در فایل اصلاح کنید':'هیچ ردیف معتبر برای ورود پیدا نشد';progress.style.display='none';if(errorRows.length&&confirm('هیچ کالای قابل ورود پیدا نشد. گزارش ردیف‌های ردشده دانلود شود؟'))downloadRowsCSV(errorRows.map(x=>({'شماره ردیف فایل':x.row,'نام کالا':x.name,'بارکد':x.code,'کد کالا':x.sku,'موجودی خام':x.qtyRaw,'قیمت خام':x.priceRaw,'علت رد شدن':x.reason})),`azar-import-errors-${dateStr()}.csv`);return;}
+    const previewOK=await chooseImportPreview(np,{valid:np.length,skipped,invalid:invalidQty,duplicates:duplicateCount},errorRows);
+    if(!previewOK){status.textContent='ورود فایل در مرحله پیش‌نمایش لغو شد';progress.style.display='none';return;}
+    const mode=await chooseImportMode(products.length,np.length,duplicateCount);
+    if(!mode){status.textContent='ورود فایل لغو شد';progress.style.display='none';return;}
+    progress.querySelector('div').style.width='70%';status.textContent=`در حال ${mode==='merge'?'ادغام':'جایگزینی'} ${np.length} کالا...`;
+    let added=0,updated=0;
+    if(mode==='replace'){
+      products=np;added=np.length;
+    }else{
+      const byCode=new Map(),bySku=new Map(),byName=new Map();
+      products.forEach((p,i)=>{if(p.code&&!byCode.has(String(p.code).trim().toLowerCase()))byCode.set(String(p.code).trim().toLowerCase(),i);if(p.sku&&!bySku.has(String(p.sku).trim().toLowerCase()))bySku.set(String(p.sku).trim().toLowerCase(),i);const n=normalizeImportHeader(p.name||'');if(n&&!byName.has(n))byName.set(n,i);});
+      np.forEach(incoming=>{const c=String(incoming.code||'').trim().toLowerCase(),s=String(incoming.sku||'').trim().toLowerCase(),n=normalizeImportHeader(incoming.name||'');let idx=c?byCode.get(c):undefined;if(idx===undefined&&s)idx=bySku.get(s);if(idx===undefined&&n)idx=byName.get(n);
+        if(idx!==undefined){const old=products[idx];products[idx]={...old,name:incoming.name||old.name,code:incoming.code||old.code,sku:incoming.sku||old.sku,unit:incoming.unit||old.unit,systemQty:qtyKey?incoming.systemQty:old.systemQty,price:priceKey?incoming.price:old.price,location:incoming.location||old.location,countedQty:null,countedQty2:null};updated++;}
+        else{products.push(incoming);const newIdx=products.length-1;if(c)byCode.set(c,newIdx);if(s)bySku.set(s,newIdx);if(n)byName.set(n,newIdx);added++;}
+      });
+    }
+    products.forEach(p=>{p.countedQty=null;p.countedQty2=null;});save();startNewSession(true);renderAll();updateHeader();updateStorageInfo();progress.querySelector('div').style.width='100%';
+    status.textContent=`✅ ورود انجام شد: ${added.toLocaleString('fa-IR')} جدید، ${updated.toLocaleString('fa-IR')} به‌روزرسانی`+(duplicateCount?`، ${duplicateCount.toLocaleString('fa-IR')} ردیف تکراری نادیده گرفته شد`:'')+(skipped?`، ${skipped.toLocaleString('fa-IR')} ردیف خالی رد شد`:'')+(invalidQty?`، ${invalidQty.toLocaleString('fa-IR')} ردیف با تعداد/قیمت نامعتبر حذف شد`:'');
+    logAudit('import',{count:np.length,added,updated,mode,duplicates:duplicateCount,format:isCsv?'CSV':(/\.xlsx$/i.test(file.name||'')&&!window.XLSX?'XLSX آفلاین':'Excel')});toast(`ورود انجام شد؛ ${added} جدید، ${updated} به‌روزرسانی`,'success');setTimeout(()=>{progress.style.display='none';},4500);
+  }catch(err){console.error(err);status.textContent='خطا در خواندن فایل: '+(err&&err.message?err.message:'خطای نامشخص');progress.style.display='none';}}
+  reader.onerror=()=>{status.textContent='خواندن فایل ناموفق بود';progress.style.display='none';};
+  if(/\.(csv|txt)$/i.test(file.name||''))reader.readAsText(file,'UTF-8');else reader.readAsArrayBuffer(file);
+}
+function findCol(keys,cands){for(const c of cands){const f=keys.find(k=>String(k).toLowerCase().includes(c.toLowerCase())||k===c);if(f)return f}return null}
+
+function openProductModal(id){document.getElementById('productForm').reset();document.getElementById('productId').value='';document.getElementById('productModalTitle').textContent='افزودن کالا';if(id){const p=products.find(x=>x.id===id);if(p){document.getElementById('productId').value=p.id;document.getElementById('productName').value=p.name;document.getElementById('productCode').value=p.code||'';document.getElementById('productSku').value=p.sku||'';document.getElementById('productUnit').value=p.unit||'عدد';document.getElementById('productSystemQty').value=p.systemQty??0;const pp=document.getElementById('productPrice');if(pp)pp.value=p.price??0;document.getElementById('productLocation').value=p.location||'';document.getElementById('productNote').value=p.note||'';document.getElementById('productModalTitle').textContent='ویرایش کالا'}}document.getElementById('productModal').classList.add('show')}
+function closeProductModal(){document.getElementById('productModal').classList.remove('show')}
+function saveProduct(e){e.preventDefault();const id=document.getElementById('productId').value;const data={name:document.getElementById('productName').value.trim(),code:document.getElementById('productCode').value.trim(),sku:document.getElementById('productSku').value.trim(),unit:document.getElementById('productUnit').value,systemQty:parseFloat(document.getElementById('productSystemQty').value)||0,price:parseFloat((document.getElementById('productPrice')||{}).value)||0,location:document.getElementById('productLocation').value.trim(),note:document.getElementById('productNote').value.trim()};if(!data.name)return toast('نام الزامی است','error');if(id){const idx=products.findIndex(x=>x.id===id);if(idx>=0)products[idx]={...products[idx],...data};toast('ویرایش شد','success')}else{products.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),...data,price:0,countedQty:null,createdAt:new Date().toISOString()});toast('اضافه شد','success')}save();closeProductModal();renderAll();updateHeader()}
+function deleteProduct(id){if(!confirm('حذف شود؟'))return;products=products.filter(p=>p.id!==id);save();renderAll();updateHeader();toast('حذف شد')}
+function renderProductsList(){const q=(document.getElementById('searchProducts')?.value||'').toLowerCase();let f=q?products.filter(p=>p.name.toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)||(p.location||'').toLowerCase().includes(q)):products;const list=document.getElementById('productsList');if(listLimitProducts>f.length+50)listLimitProducts=Math.max(50,f.length);const show=f.slice(0,listLimitProducts);if(!f.length){list.innerHTML='<div class="empty-state"><p>کالایی یافت نشد</p></div>';return}list.innerHTML=show.map(p=>`<div class="item"><div class="item-header"><div><div class="item-name">${esc(p.name)}</div><div class="item-code">${esc(p.code||p.sku||'بدون کد')}</div></div><div class="actions-row" style="margin:0"><button class="btn btn-secondary btn-sm" onclick="openProductModal('${p.id}')">ویرایش</button><button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">حذف</button></div></div><div class="item-meta"><span>📦 ${p.systemQty}</span>${p.location?`<span>📍 ${esc(p.location)}</span>`:''}${p.note?'<span>📝</span>':''}</div></div>`).join('')+(f.length>60?`<p class="hint" style="text-align:center">نمایش ۶۰ از ${f.length}</p>`:'')}
+function filterProductsList(){listLimitProducts=50;renderProductsList()}
+
+function setCountFilter(f){countFilter=f;listLimitCount=50;document.querySelectorAll('#page-count .filter-tab').forEach(t=>t.classList.toggle('active',t.dataset.filter===f));renderCountList()}
+function updateCount(id,value){if(guardLocked())return;const p=products.find(x=>x.id===id);if(!p)return;const v=parseFloat(value);const next=isNaN(v)?null:v;
+  if(isDoubleCount()&&countPhase()===2){
+    const prev=p.countedQty2!==undefined?p.countedQty2:null;
+    if(prev===next)return;p.countedQty2=next;
+    pushUndo({type:'count2',id:p.id,prev:prev,next:next,name:p.name,ts:Date.now()});
+    logAudit('count2',{id:p.id,name:p.name,prev:prev,next:next});
+  } else {
+    const prev=p.countedQty;if(prev===next)return;p.countedQty=next;recordCountChange(p,prev);
+  }
+  save();updateHeader();renderCountList()}
+function adjustCount(id,delta){if(guardLocked())return;const p=products.find(x=>x.id===id);if(!p)return;
+  if(isDoubleCount()&&countPhase()===2){
+    const prev=p.countedQty2!==undefined?p.countedQty2:null;
+    p.countedQty2=Math.max(0,(p.countedQty2??0)+delta);
+    if(prev!==p.countedQty2){pushUndo({type:'count2',id:p.id,prev:prev,next:p.countedQty2,name:p.name,ts:Date.now()});logAudit('count2',{id:p.id,name:p.name,prev:prev,next:p.countedQty2})}
+  } else {
+    const prev=p.countedQty;p.countedQty=Math.max(0,(p.countedQty??0)+delta);if(prev!==p.countedQty)recordCountChange(p,prev);
+  }
+  save();updateHeader();renderCountList()}
+function renderCountList(){const q=(document.getElementById('searchCount')?.value||'').toLowerCase();let f=products;if(q)f=products.filter(p=>p.name.toLowerCase().includes(q)||(p.code||'').toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)||(p.location||'').toLowerCase().includes(q));const locFilter=(document.getElementById('locationFilter')?.value)||currentLocation||'';if(locFilter)f=f.filter(p=>(p.location||'')===locFilter);if(countFilter==='uncounted')f=f.filter(p=>isDoubleCount()&&countPhase()===2?(p.countedQty2==null||p.countedQty2===undefined):p.countedQty===null);
+  else if(countFilter==='diff')f=f.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty);
+  else if(countFilter==='ok')f=f.filter(p=>p.countedQty!==null&&p.countedQty===p.systemQty);
+  else if(countFilter==='mismatch2')f=f.filter(p=>p.countedQty!=null&&p.countedQty2!=null&&p.countedQty!==p.countedQty2);const sort=document.getElementById('sortCount')?.value||'default';if(sort==='name')f=[...f].sort((a,b)=>a.name.localeCompare(b.name,'fa'));else if(sort==='diff')f=[...f].sort((a,b)=>{const da=a.countedQty!==null?Math.abs(a.countedQty-a.systemQty):-1,db=b.countedQty!==null?Math.abs(b.countedQty-b.systemQty):-1;return db-da});else if(sort==='location')f=[...f].sort((a,b)=>(a.location||'').localeCompare(b.location||'','fa'));else if(sort==='uncounted')f=[...f].sort((a,b)=>(a.countedQty===null?0:1)-(b.countedQty===null?0:1));const list=document.getElementById('countList');if(!f.length){list.innerHTML='<div class="empty-state"><p>موردی یافت نشد</p></div>';return}if(listLimitCount>f.length+50)listLimitCount=Math.max(50,f.length);const show=f.slice(0,listLimitCount);list.innerHTML=show.map(p=>{const use2=isDoubleCount()&&countPhase()===2;const counted=use2?(p.countedQty2??null):p.countedQty;const diff=counted!==null&&!isBlind()?counted-p.systemQty:null;let badge='';if(isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null&&p.countedQty!==p.countedQty2)badge='<span class="badge badge-zero">اختلاف دو شمارش</span>';
+else if(isBlind()){if(counted===null)badge='<span class="badge badge-new">نشده</span>';else badge='<span class="badge badge-ok">شمارش شد</span>'}else{if(counted===null)badge='<span class="badge badge-new">نشده</span>';else if(diff===0)badge='<span class="badge badge-ok">تطابق</span>';else if(counted===0)badge='<span class="badge badge-zero">صفر</span>';else badge=`<span class="badge badge-diff">${diff>0?'+':''}${diff}</span>`}const sysLine=isBlind()?'':`<span>سیستم: ${p.systemQty}</span>`;const d2=isDoubleCount()?`<span>۱:${p.countedQty??'—'} ۲:${p.countedQty2??'—'}</span>`:'';return`<div class="item${p.id===lastScannedId?' highlight':''}" id="item-${p.id}"><div class="item-header"><div><div class="item-name">${esc(p.name)}</div><div class="item-code">${esc(p.code||p.sku||'')}</div></div>${badge}</div><div class="item-meta">${sysLine}${d2}${p.location?`<span>📍 ${esc(p.location)}</span>`:''}${p.note?`<span title="${esc(p.note)}">📝</span>`:''}</div><div class="count-controls"><button class="btn btn-icon" onclick="adjustCount('${p.id}',-1)">−</button><input type="number" value="${counted??''}" placeholder="—" min="0" step="any" onchange="updateCount('${p.id}',this.value)"><button class="btn btn-icon" onclick="adjustCount('${p.id}',1)">＋</button><button class="btn btn-sm btn-secondary" onclick="updateCount('${p.id}',0)" title="صفر">۰</button></div></div>`}).join('')+(f.length>show.length?`<button class="btn btn-secondary btn-block" style="margin-top:8px" onclick="listLimitCount+=50;renderCountList()">نمایش بیشتر (${show.length} از ${f.length})</button>`:`<p class="hint" style="text-align:center;margin-top:8px">${f.length.toLocaleString('fa-IR')} کالا</p>`)}
+function filterCountList(){listLimitCount=50;renderCountList()}
+function renderRecent(){const el=document.getElementById('recentScans');if(!recentScans.length){el.innerHTML='';return}el.innerHTML=recentScans.slice(0,8).map(r=>`<span class="recent-chip" onclick="focusProduct('${r.id}')">${esc(r.name)} (${r.qty})</span>`).join('')}
+function focusProduct(id){lastScannedId=id;const p=products.find(x=>x.id===id);if(p)showScanResult(p);document.getElementById('searchCount').value='';listLimitCount=50;countFilter='all';document.querySelectorAll('#page-count .filter-tab').forEach(t=>t.classList.toggle('active',t.dataset.filter==='all'));showPage('count');renderCountList();
+  setTimeout(()=>{const el=document.getElementById('item-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},80)}
+
+function openScanner(tf){scanTargetField=tf||null;quickMode=false;document.getElementById('scannerTitle').textContent=tf?'اسکن برای فیلد':'اسکن بارکد';document.getElementById('scannerContinuous').checked=settings.continuousScan===true;const an=document.getElementById('scannerAutoNext');if(an)an.checked=settings.autoNextScan!==false;document.getElementById('lastScanInfo').textContent='';renderLastCountedScan();const mb=document.getElementById('manualBarcode');if(mb)mb.value='';document.getElementById('scannerModal').classList.add('show');startCamera()}
+function openQuickCount(){scanTargetField=null;quickMode=true;document.getElementById('scannerTitle').textContent='شمارش سریع ⚡';document.getElementById('scannerContinuous').checked=settings.continuousScan===true;const an=document.getElementById('scannerAutoNext');if(an)an.checked=settings.autoNextScan!==false;document.getElementById('lastScanInfo').textContent='';renderLastCountedScan();const mb=document.getElementById('manualBarcode');if(mb)mb.value='';document.getElementById('scannerModal').classList.add('show');startCamera()}
+let torchOn=false;
+let nativeScannerStream=null,nativeScannerVideo=null,nativeScannerFrame=0,nativeBarcodeDetector=null,nativeScanBusy=false,nativeLastDetected='';
+function getCameraConfig(){
+  return {
+    facingMode:'environment',
+    // prefer higher resolution for small barcodes
+    width:{ideal:1920},
+    height:{ideal:1080}
+  };
+}
+function getScanConfig(){
+  const w=Math.min(300, (window.innerWidth||320)-48);
+  return {
+    fps:15,
+    qrbox:function(viewfinderWidth, viewfinderHeight){
+      const minEdge=Math.min(viewfinderWidth, viewfinderHeight);
+      const boxW=Math.floor(minEdge*0.85);
+      const boxH=Math.floor(Math.min(boxW*0.45, minEdge*0.35));
+      return {width:boxW, height:Math.max(100, boxH)};
+    },
+    aspectRatio:1.777,
+    disableFlip:false,
+    experimentalFeatures:{useBarCodeDetectorIfSupported:true},rememberLastUsedCamera:true
+  };
+}
+function stopNativeScanner(){
+  if(nativeScannerFrame)cancelAnimationFrame(nativeScannerFrame);
+  nativeScannerFrame=0;nativeScanBusy=false;
+  if(nativeScannerStream){nativeScannerStream.getTracks().forEach(t=>{try{t.stop()}catch(e){}})}
+  nativeScannerStream=null;
+  if(nativeScannerVideo){try{nativeScannerVideo.pause();nativeScannerVideo.srcObject=null}catch(e){}}
+  nativeScannerVideo=null;
+  const host=document.getElementById('scanner-container');if(host)host.innerHTML='';
+}
+async function startNativeScanner(){
+  if(!('mediaDevices' in navigator)||!navigator.mediaDevices.getUserMedia||!('BarcodeDetector' in window)){
+    toast('اسکن آفلاین این مرورگر پشتیبانی نمی‌شود؛ از بارکدخوان USB/Bluetooth یا ورود دستی استفاده کنید','error');
+    const manual=document.getElementById('manualBarcode');if(manual)manual.focus();return;
+  }
+  stopNativeScanner();
+  const host=document.getElementById('scanner-container');if(!host)return;
+  try{
+    const supported=await BarcodeDetector.getSupportedFormats();
+    const wanted=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','qr_code'];
+    const formats=wanted.filter(f=>supported.includes(f));
+    if(!formats.length)throw new Error('No supported barcode formats');
+    nativeBarcodeDetector=new BarcodeDetector({formats});
+    const video=document.createElement('video');video.setAttribute('playsinline','');video.autoplay=true;video.muted=true;
+    video.style.cssText='width:100%;display:block;max-height:55vh;object-fit:contain;background:#111';
+    host.innerHTML='';host.appendChild(video);nativeScannerVideo=video;
+    nativeScannerStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
+    video.srcObject=nativeScannerStream;await video.play();
+    torchOn=false;const torchButton=document.getElementById('torchBtn');if(torchButton)torchButton.textContent='🔦 نور';
+    const scanFrame=async()=>{
+      if(!nativeScannerVideo||!nativeScannerStream)return;
+      nativeScannerFrame=requestAnimationFrame(scanFrame);
+      if(nativeScanBusy||video.readyState<2||qtyModalOpen)return;
+      nativeScanBusy=true;
+      try{
+        const found=await nativeBarcodeDetector.detect(video);
+        if(found&&found.length){const code=String(found[0].rawValue||'').trim();if(code&&code!==nativeLastDetected){nativeLastDetected=code;onScanSuccess(code);setTimeout(()=>{nativeLastDetected=''},1300)}}
+      }catch(e){}
+      finally{nativeScanBusy=false}
+    };
+    nativeLastDetected='';nativeScannerFrame=requestAnimationFrame(scanFrame);
+  }catch(err){console.error(err);stopNativeScanner();toast('دسترسی دوربین برقرار نشد یا مرورگر اسکن بارکد را پشتیبانی نمی‌کند؛ از بارکدخوان یا ورود دستی استفاده کنید','error');const manual=document.getElementById('manualBarcode');if(manual)manual.focus()}
+}
+function startCamera(){
+  torchOn=false;
+  if(typeof window.Html5Qrcode==='undefined'){
+    startNativeScanner();return;
+  }
+  stopNativeScanner();
+  if(!html5QrCode)html5QrCode=new Html5Qrcode('scanner-container');
+  const doStart=()=>{
+    if(html5QrCode.isScanning)return;
+    const tryStart=(cameraIdOrConfig)=>html5QrCode.start(cameraIdOrConfig,getScanConfig(),t=>onScanSuccess(t),()=>{});
+    Html5Qrcode.getCameras().then(cameras=>{
+      let chosen=null;if(cameras&&cameras.length){const back=cameras.find(c=>/back|rear|environment|پشت/i.test(c.label||''));chosen=back?back.id:(cameras.length>1?cameras[cameras.length-1].id:cameras[0].id)}
+      return tryStart(chosen?chosen:getCameraConfig());
+    }).catch(()=>tryStart(getCameraConfig())).catch(err=>{console.error(err);toast('دوربین در دسترس نیست — از ورود دستی یا بارکدخوان استفاده کنید','error')});
+  };
+  if(html5QrCode.isScanning)html5QrCode.stop().then(doStart).catch(doStart);else doStart();
+}
+async function toggleTorch(){
+  try{
+    torchOn=!torchOn;
+    if(html5QrCode&&html5QrCode.isScanning){await html5QrCode.applyVideoConstraints({advanced:[{torch:torchOn}]});}
+    else if(nativeScannerStream){const track=nativeScannerStream.getVideoTracks()[0];if(!track)throw new Error('no track');await track.applyConstraints({advanced:[{torch:torchOn}]});}
+    else {torchOn=false;return toast('اول دوربین را باز کنید')}
+    const b=document.getElementById('torchBtn');if(b)b.textContent=torchOn?'🔦 روشن':'🔦 نور';
+  }catch(e){torchOn=false;toast('این گوشی یا مرورگر نور فلش را پشتیبانی نمی‌کند')}
+}
+function restartCamera(){
+  stopNativeScanner();
+  if(html5QrCode&&html5QrCode.isScanning)html5QrCode.stop().then(()=>startCamera()).catch(()=>startCamera());else startCamera();
+}
+function submitManualBarcode(){
+  const el=document.getElementById('manualBarcode');
+  const code=(el&&el.value||'').trim();
+  if(!code)return;
+  if(el)el.value='';
+  handleBarcode(code);
+}
+function closeScanner(){document.getElementById('scannerModal').classList.remove('show');stopNativeScanner();if(html5QrCode&&html5QrCode.isScanning)html5QrCode.stop().catch(()=>{});scanTargetField=null;quickMode=false;closeQtyModal(false)}
+function saveScanWorkflowSettings(){const el=document.getElementById('scannerAutoNext');settings.autoNextScan=el?el.checked:true;persistAll();}
+
+function openQtyModal(p){
+  if(!p||guardLocked())return;
+  qtyModalProduct=p;
+  qtyModalOpen=true;
+  lastScannedId=p.id;
+  // دوربین روشن می‌ماند؛ فقط با فلگ qtyModalOpen اسکن‌های جدید نادیده گرفته می‌شوند
+  const use2=isDoubleCount()&&countPhase()===2;
+  let current=use2?(p.countedQty2??null):(p.countedQty??null);
+  let suggest;
+  if(current!==null&&current!==undefined){
+    suggest=settings.autoIncrement!==false ? (Number(current)+1) : current;
+  } else {
+    suggest=settings.autoIncrement!==false ? 1 : (isBlind()?0:p.systemQty);
+  }
+  document.getElementById('qtyModalName').textContent=p.name;
+  let meta='بارکد: '+(p.code||'—');
+  if(!isBlind())meta+=' | سیستم: '+p.systemQty;
+  if(p.location)meta+=' | 📍 '+p.location;
+  else if(currentLocation)meta+=' | 📍 '+currentLocation;
+  if(isDoubleCount())meta+=' | فاز '+countPhase();
+  if(current!==null&&current!==undefined)meta+=' | فعلی: '+current;
+  document.getElementById('qtyModalMeta').textContent=meta;
+  const inp=document.getElementById('qtyModalInput');
+  inp.value=suggest;
+  const eqBtn=document.getElementById('qtyModalEqBtn');
+  if(eqBtn)eqBtn.style.display=isBlind()?'none':'inline-flex';
+  updateQtyModalDiff();
+  const qtyEl=document.getElementById('qtyModal');
+  qtyEl.classList.add('show');
+  qtyEl.style.zIndex='250'; // بالاتر از مودال اسکنر
+  setTimeout(()=>{try{inp.focus();inp.select()}catch(e){}},150);
+}
+function updateQtyModalDiff(){
+  const el=document.getElementById('qtyModalDiff');
+  if(!el||!qtyModalProduct)return;
+  const p=qtyModalProduct;
+  const q=parseFloat(document.getElementById('qtyModalInput').value);
+  if(isNaN(q)){el.textContent='';return}
+  if(isBlind()){el.textContent='تعداد ثبت خواهد شد';el.style.color='var(--success)';return}
+  const diff=q-p.systemQty;
+  if(diff===0){el.textContent='تطابق با سیستم ✓';el.style.color='var(--success)'}
+  else{el.textContent='مغایرت: '+(diff>0?'+':'')+diff;el.style.color=diff>0?'var(--success)':'var(--danger)'}
+}
+function adjustQtyModal(d){
+  const inp=document.getElementById('qtyModalInput');
+  let v=parseFloat(inp.value);
+  if(isNaN(v))v=0;
+  v=Math.max(0,v+d);
+  inp.value=v;
+  updateQtyModalDiff();
+}
+function setQtyModalValue(v){
+  document.getElementById('qtyModalInput').value=v;
+  updateQtyModalDiff();
+}
+function setQtyModalToSystem(){
+  if(!qtyModalProduct)return;
+  document.getElementById('qtyModalInput').value=qtyModalProduct.systemQty;
+  updateQtyModalDiff();
+}
+function renderLastCountedScan(){
+  const card=document.getElementById('lastCountedScanCard');
+  const name=document.getElementById('lastCountedScanName');
+  const meta=document.getElementById('lastCountedScanMeta');
+  if(!card||!name||!meta)return;
+  const r=Array.isArray(recentScans)&&recentScans.length?recentScans[0]:null;
+  if(!r){card.style.display='none';return;}
+  name.textContent=r.name||'کالا';
+  meta.textContent='تعداد ثبت‌شده: '+String(r.qty??'—')+' • برای جلوگیری از ثبت تکراری، کالای بعدی را پس از تأیید تعداد اسکن کنید.';
+  card.style.display='block';
+}
+
+function confirmQtyModal(){
+  if(!qtyModalProduct){closeQtyModal(false);return}
+  if(guardLocked())return;
+  const p=qtyModalProduct;
+  const raw=document.getElementById('qtyModalInput').value;
+  const next=parseFloat(raw);
+  if(isNaN(next)||next<0){toast('تعداد معتبر وارد کنید','error');return}
+  const use2=isDoubleCount()&&countPhase()===2;
+  if(use2){
+    const prev=p.countedQty2!==undefined?p.countedQty2:null;
+    if(prev!==next){
+      p.countedQty2=next;
+      pushUndo({type:'count2',id:p.id,prev:prev,next:next,name:p.name,ts:Date.now()});
+      logAudit('count2',{id:p.id,name:p.name,prev:prev,next:next});
+    }
+  } else {
+    const prev=p.countedQty;
+    if(prev!==next){
+      p.countedQty=next;
+      recordCountChange(p,prev);
+    }
+  }
+  save();
+  lastScannedId=p.id;
+  const displayQty=use2?(p.countedQty2??next):(p.countedQty??next);
+  recentScans=recentScans.filter(r=>r.id!==p.id);
+  recentScans.unshift({id:p.id,name:p.name,qty:displayQty});
+  saveRecent();
+  renderLastCountedScan();
+  showScanResult(p);
+  const card=document.getElementById('scanResultCard');
+  if(card){card.classList.remove('scan-flash');void card.offsetWidth;card.classList.add('scan-flash')}
+  updateHeader();renderRecent();renderCountList();
+  toast(p.name+': '+displayQty,'success');
+  // اسکن پیوسته یک گزینه اختیاری است؛ گردش کار عادی، ثبت تعداد و سپس اسکن کالای بعدی است.
+  const scannerStillOpen=document.getElementById('scannerModal').classList.contains('show');
+  const autoNext=settings.autoNextScan!==false;
+  // ثبت زمان آخرین تأیید برای محافظت از اسکن تکراری همان کالا؛ بارکد کالاهای دیگر مسدود نمی‌شود.
+  lastConfirmedProductId=p.id;
+  lastConfirmedAt=Date.now();
+  closeQtyModal(true);
+  if(scannerStillOpen && autoNext){
+    const info=document.getElementById('lastScanInfo');
+    if(info){info.textContent='✓ ذخیره شد — بارکد بعدی را بگیرید';info.style.color='#6ee7b7'}
+    // اطمینان از روشن بودن دوربین برای اسکن بعدی
+    setTimeout(function(){
+      if(!document.getElementById('scannerModal').classList.contains('show'))return;
+      if(qtyModalOpen)return;
+      try{
+        if((!html5QrCode||!html5QrCode.isScanning)&&!nativeScannerStream){
+          startCamera();
+        }
+      }catch(e){try{startCamera()}catch(e2){}}
+    },250);
+  } else if(scannerStillOpen && !autoNext){
+    closeScanner();
+    toast('تعداد ثبت شد؛ برای کالای بعدی اسکن را دوباره باز کنید','success');
+  }
+}
+function closeQtyModal(confirmed){
+  qtyModalOpen=false;
+  qtyModalProduct=null;
+  const el=document.getElementById('qtyModal');
+  if(el){el.classList.remove('show');el.style.zIndex='';}
+}
+function onScanSuccess(code){
+  const now=Date.now();
+  if(now-lastScanTime<900)return;
+  if(qtyModalOpen)return; // wait until quantity is confirmed
+  lastScanTime=now;
+  code=String(code).trim();
+  if(guardLocked())return;
+  if(scanTargetField){
+    document.getElementById(scanTargetField).value=code;
+    playBeep(true);toast('بارکد ثبت شد');closeScanner();return;
+  }
+  const idx=codeIndex[code];
+  if(idx===undefined){
+    playBeep(false);
+    document.getElementById('lastScanInfo').textContent='❌ یافت نشد: '+code;
+    document.getElementById('lastScanInfo').style.color='#fca5a5';
+    if(navigator.vibrate&&settings.vibrateOnScan)navigator.vibrate([50,30,50]);
+    if(!document.getElementById('scannerContinuous').checked){
+      closeScanner();
+      if(confirm(`کالایی با بارکد «${code}» نیست.\nاضافه شود؟`)){
+        openProductModal();
+        document.getElementById('productCode').value=code;
+      }
+    }
+    return;
+  }
+  const p=products[idx];
+  if(p.id===lastConfirmedProductId && now-lastConfirmedAt<SAME_PRODUCT_SCAN_GUARD_MS){
+    playBeep(false);
+    const info=document.getElementById('lastScanInfo');
+    if(info){info.textContent='⚠ اسکن تکراری نادیده گرفته شد؛ برای شمارش دوباره کمی صبر کنید.';info.style.color='#fca5a5'}
+    return;
+  }
+  if(currentLocation&&!p.location)p.location=currentLocation;
+  playBeep(true);
+  if(navigator.vibrate&&settings.vibrateOnScan)navigator.vibrate(40);
+  document.getElementById('lastScanInfo').textContent='✓ '+p.name;
+  document.getElementById('lastScanInfo').style.color='#6ee7b7';
+  openQtyModal(p);
+}
+function showScanResult(p){document.getElementById('scanResultName').textContent=p.name;let meta=`بارکد: ${p.code||'—'}`;if(!isBlind())meta+=` | سیستم: ${p.systemQty}`;if(p.location)meta+=` | 📍 ${p.location}`;else if(currentLocation)meta+=` | 📍 ${currentLocation}`;
+  if(isDoubleCount())meta+=` | فاز ${countPhase()}`;
+  document.getElementById('scanResultMeta').textContent=meta;
+  const use2=isDoubleCount()&&countPhase()===2;
+  const displayQty=use2?(p.countedQty2??''):(p.countedQty??'');
+  document.getElementById('scanResultQty').value=displayQty;
+  const diffEl=document.getElementById('scanResultDiff');
+  if(isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null&&p.countedQty!==p.countedQty2){
+    diffEl.textContent=`⚠ اختلاف دو شمارش: ${p.countedQty} ≠ ${p.countedQty2}`;diffEl.style.color='#fde68a';
+  } else if(isBlind()){diffEl.textContent=displayQty!==''&&displayQty!==null?'شمارش ثبت شد':'';diffEl.style.color='#a7f3d0'}
+  else{const q=use2?p.countedQty2:p.countedQty;const diff=(q??0)-p.systemQty;if(q===null||q===undefined)diffEl.textContent='';else if(diff===0){diffEl.textContent='تطابق ✓';diffEl.style.color='#a7f3d0'}else{diffEl.textContent=`مغایرت: ${diff>0?'+':''}${diff}`;diffEl.style.color='#fecaca'}}
+  document.getElementById('scanResultCard').classList.add('show');const beq=document.getElementById('btnEqSystem');if(beq)beq.style.display=isBlind()?'none':'inline-flex'}
+function adjustScanned(d){if(guardLocked())return;if(!lastScannedId)return;const p=products.find(x=>x.id===lastScannedId);if(!p)return;
+  if(isDoubleCount()&&countPhase()===2){const prev=p.countedQty2!==undefined?p.countedQty2:null;p.countedQty2=Math.max(0,(p.countedQty2??0)+d);if(prev!==p.countedQty2){pushUndo({type:'count2',id:p.id,prev:prev,next:p.countedQty2,name:p.name,ts:Date.now()});logAudit('count2',{id:p.id,name:p.name,prev:prev,next:p.countedQty2})}}
+  else{const prev=p.countedQty;p.countedQty=Math.max(0,(p.countedQty??0)+d);if(prev!==p.countedQty)recordCountChange(p,prev)}
+  save();showScanResult(p);updateHeader()}
+function setScannedQty(v){if(guardLocked())return;if(!lastScannedId)return;const p=products.find(x=>x.id===lastScannedId);if(!p)return;const next=parseFloat(v)||0;
+  if(isDoubleCount()&&countPhase()===2){const prev=p.countedQty2!==undefined?p.countedQty2:null;if(prev===next)return;p.countedQty2=next;pushUndo({type:'count2',id:p.id,prev:prev,next:next,name:p.name,ts:Date.now()});logAudit('count2',{id:p.id,name:p.name,prev:prev,next:next})}
+  else{const prev=p.countedQty;if(prev===next)return;p.countedQty=next;recordCountChange(p,prev)}
+  save();showScanResult(p);updateHeader()}
+function setScannedToSystem(){if(guardLocked())return;if(!lastScannedId)return;const p=products.find(x=>x.id===lastScannedId);if(!p)return;const prev=p.countedQty;if(prev===p.systemQty)return;p.countedQty=p.systemQty;recordCountChange(p,prev);save();showScanResult(p);updateHeader();toast('برابر سیستم شد')}
+function addNoteToScanned(){if(!lastScannedId)return;const p=products.find(x=>x.id===lastScannedId);if(!p)return;const n=prompt('یادداشت:',p.note||'');if(n!==null){p.note=n;save();toast('یادداشت ذخیره شد')}}
+function scanForField(f){openScanner(f)}
+
+function renderReport(){setTimeout(renderReadiness,0);const total=products.length,counted=products.filter(p=>p.countedQty!==null).length,diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty),ok=products.filter(p=>p.countedQty!==null&&p.countedQty===p.systemQty).length,over=diffs.filter(p=>p.countedQty>p.systemQty).length,under=diffs.filter(p=>p.countedQty<p.systemQty).length;
+const diffValue=diffs.reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);
+const overValue=diffs.filter(p=>p.countedQty>p.systemQty).reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);
+const underValue=diffs.filter(p=>p.countedQty<p.systemQty).reduce((s,p)=>s+((p.systemQty-p.countedQty)*(p.price||0)),0);
+document.getElementById('statsGrid').innerHTML=`<div class="stat-card"><div class="stat-value">${total.toLocaleString('fa-IR')}</div><div class="stat-label">کل کالاها</div></div><div class="stat-card"><div class="stat-value">${counted.toLocaleString('fa-IR')}</div><div class="stat-label">شمارش‌شده</div></div><div class="stat-card"><div class="stat-value" style="color:${diffs.length?'var(--danger)':'var(--success)'}">${diffs.length.toLocaleString('fa-IR')}</div><div class="stat-label">مغایرت</div></div><div class="stat-card"><div class="stat-value">${ok.toLocaleString('fa-IR')}</div><div class="stat-label">تطابق</div></div><div class="stat-card"><div class="stat-value" style="color:var(--success)">${over}</div><div class="stat-label">اضافه</div></div><div class="stat-card"><div class="stat-value" style="color:var(--danger)">${under}</div><div class="stat-label">کسری</div></div>
+<div class="stat-card"><div class="stat-value" style="color:${diffValue>=0?'var(--success)':'var(--danger)'};font-size:1.05rem">${fmtMoney(diffValue)}</div><div class="stat-label">ارزش خالص مغایرت</div></div>
+<div class="stat-card"><div class="stat-value" style="color:var(--danger);font-size:1.05rem">${fmtMoney(underValue)}</div><div class="stat-label">ارزش کسری</div></div>`;const list=document.getElementById('diffList');if(!diffs.length)list.innerHTML='<div class="empty-state" style="padding:16px"><p>مغایرتی نیست 🎉</p></div>';else list.innerHTML=diffs.slice(0,100).map(p=>{const diff=p.countedQty-p.systemQty;const val=(diff)*(p.price||0);return`<div class="item"><div class="item-header"><div><div class="item-name">${esc(p.name)}</div><div class="item-code">${esc(p.code||'')}</div></div><span class="${diff>0?'diff-positive':'diff-negative'}" style="font-weight:800;font-size:1.05rem">${diff>0?'+':''}${diff}</span></div><div class="item-meta"><span>سیستم: ${p.systemQty}</span><span>واقعی: ${p.countedQty}</span>${p.price?`<span>💰 ${fmtMoney(val)}</span>`:''}${p.note?`<span>📝 ${esc(p.note)}</span>`:''}</div></div>`}).join('')+(diffs.length>100?`<p class="hint">نمایش ۱۰۰ از ${diffs.length}</p>`:'')}
+function acceptSecondCounts(){
+  if(guardLocked())return;
+  const items=products.filter(p=>p.countedQty2!=null&&p.countedQty2!==undefined);
+  if(!items.length)return toast('شمارش دومی ثبت نشده');
+  if(!confirm(`شمارش دوم ${items.length} کالا به‌عنوان نهایی جایگزین شود؟`))return;
+  pushUndo({type:'bulk',items:items.map(p=>({id:p.id,prev:p.countedQty}))});
+  items.forEach(p=>{p.countedQty=p.countedQty2});
+  save();logAudit('accept_count2',{count:items.length});
+  updateHeader();renderCountList();renderReport();
+  toast('شمارش دوم نهایی شد','success');
+}
+function showDoubleMismatches(){
+  settings.doubleCount=true;const dc=document.getElementById('doubleCount');if(dc)dc.checked=true;
+  setCountFilter('mismatch2');showPage('count');
+  toast('کالاهای با اختلاف دو شمارش');
+}
+function bulkSetUncountedZero(){if(guardLocked())return;const items=products.filter(p=>p.countedQty===null);if(!items.length)return toast('همه شمارش شده‌اند');if(!confirm(`${items.length} کالای شمارش‌نشده صفر شوند؟`))return;pushUndo({type:'bulk',items:items.map(p=>({id:p.id,prev:p.countedQty}))});items.forEach(p=>{p.countedQty=0});save();logAudit('bulk_zero',{count:items.length});updateHeader();renderReport();renderCountList();toast(items.length+' کالا صفر شد','success')}
+function applyCountsToSystem(){if(guardLocked())return;const n=products.filter(p=>p.countedQty!==null).length;if(!n)return toast('شمارشی وجود ندارد');if(!confirm(`موجودی سیستم ${n} کالا برابر شمارش واقعی شود؟`))return;products.forEach(p=>{if(p.countedQty!==null)p.systemQty=p.countedQty});save();logAudit('apply_system',{count:n});renderReport();toast('موجودی سیستم به‌روز شد','success')}
+function clearAllCounts(){if(guardLocked())return;if(!confirm('همه شمارش‌ها پاک شود؟ (موجودی سیستم می‌ماند)'))return;const items=products.filter(p=>p.countedQty!==null);pushUndo({type:'bulk',items:items.map(p=>({id:p.id,prev:p.countedQty}))});products.forEach(p=>{p.countedQty=null});save();logAudit('clear_counts',{count:items.length});updateHeader();renderReport();renderCountList();document.getElementById('scanResultCard').classList.remove('show');toast('شمارش‌ها پاک شد')}
+
+
+function getOperatorName(){return (localStorage.getItem('anbar_operator')||'').trim()||'ناشناس'}
+function isBlind(){return !!settings.blindCount}
+function isDoubleCount(){return !!settings.doubleCount}
+function countPhase(){return settings.countPhase===2?2:1}
+function setCountPhase(ph){settings.countPhase=ph;persistAll();updatePhaseUI();renderCountList();toast(ph===2?'فاز ۲: شمارش دوم':'فاز ۱: شمارش اول')}
+function updatePhaseUI(){
+  const el=document.getElementById('phaseBar');
+  if(!el)return;
+  if(!isDoubleCount()){el.style.display='none';return}
+  el.style.display='flex';
+  const p=countPhase();
+  el.querySelectorAll('[data-phase]').forEach(b=>b.classList.toggle('active',Number(b.dataset.phase)===p));
+}
+function applyDarkMode(){document.documentElement.setAttribute('data-theme', settings.darkMode ? 'dark' : 'light')}
+function updateBlindBadge(){const el=document.getElementById('blindBadge');if(el)el.style.display=settings.blindCount?'inline':'none'}
+function isSessionClosed(){return !!(session&&session.closedAt)}
+function guardLocked(){
+  if(isSessionClosed()){toast('جلسه بسته است — برای تغییر، بازگشایی کنید','error');return true}
+  return false;
+}
+function updateSessionLockUI(){
+  const closed=isSessionClosed();
+  const st=document.getElementById('sessionStatus');
+  if(st){st.textContent=closed?'بسته':'باز';st.className='badge '+(closed?'badge-diff':'badge-ok')}
+  const bc=document.getElementById('btnCloseSession');
+  const br=document.getElementById('btnReopenSession');
+  if(bc)bc.style.display=closed?'none':'inline-flex';
+  if(br)br.style.display=closed?'inline-flex':'none';
+  const be=document.getElementById('btnExportFinal');
+  if(be)be.disabled=!closed;
+  const hint=document.getElementById('finalReportHint');
+  if(hint){
+    if(closed)hint.textContent='جلسه در '+formatAuditTime(session.closedAt)+' بسته شد'+(session.closedBy?(' توسط '+session.closedBy):'')+'. شمارش قفل است.';
+    else hint.textContent='بعد از بستن جلسه، شمارش قفل می‌شود و گزارش نهایی صادر می‌گردد.';
+  }
+  renderFinalStats();
+  document.body.classList.toggle('session-locked', closed);
+}
+function renderFinalStats(){
+  const el=document.getElementById('finalReportStats');
+  if(!el||!session)return;
+  if(!isSessionClosed()){el.innerHTML='';return}
+  const total=products.length;
+  const counted=products.filter(p=>p.countedQty!==null).length;
+  const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty);
+  const diffValue=diffs.reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);
+  el.innerHTML='<div class="item-meta" style="margin-top:6px"><span>کل: '+total+'</span><span>شمارش: '+counted+'</span><span>مغایرت: '+diffs.length+'</span><span>ارزش: '+fmtMoney(diffValue)+'</span></div>';
+}
+
+function saveAudit(){try{localStorage.setItem('anbar_audit',JSON.stringify(auditLog.slice(-AUDIT_MAX)))}catch(e){}}
+function logAudit(action,detail){
+  if(typeof auditLog==='undefined')return;
+  auditLog.push({ts:new Date().toISOString(),op:getOperatorName(),action:action,detail:detail||{}});
+  if(auditLog.length>AUDIT_MAX)auditLog=auditLog.slice(-AUDIT_MAX);
+  saveAudit();
+}
+function getLocations(){
+  const s=new Set();
+  products.forEach(p=>{if(p.location&&p.location.trim())s.add(p.location.trim())});
+  return [...s].sort((a,b)=>a.localeCompare(b,'fa'));
+}
+function refreshLocationFilter(){
+  const sel=document.getElementById('locationFilter');
+  if(!sel)return;
+  const cur=sel.value;
+  const locs=getLocations();
+  sel.innerHTML='<option value="">همه محل‌ها</option>'+locs.map(l=>'<option value="'+esc(l)+'">'+esc(l)+'</option>').join('');
+  if(cur)sel.value=cur;
+}
+function onLocationChange(){
+  currentLocation=document.getElementById('locationFilter').value||'';
+  renderCountList();
+}
+function setCurrentLocation(){
+  const v=prompt('محل / قفسه فعلی را وارد کنید:',currentLocation||'');
+  if(v===null)return;
+  currentLocation=v.trim();
+  const sel=document.getElementById('locationFilter');
+  if(sel){
+    if(currentLocation&&![...sel.options].some(o=>o.value===currentLocation)){
+      const opt=document.createElement('option');opt.value=currentLocation;opt.textContent=currentLocation;sel.appendChild(opt);
+    }
+    sel.value=currentLocation;
+  }
+  renderCountList();
+  toast(currentLocation?'محل: '+currentLocation:'همه محل‌ها');
+}
+
+function closeSession(){
+  if(isSessionClosed())return toast('جلسه از قبل بسته است');
+  if(!products.length)return toast('کالایی نیست','error');
+  const counted=products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined).length;
+  const uncounted=products.length-counted;
+  const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined&&Number(p.countedQty)!==Number(p.systemQty)).length;
+  const mismatch2=products.filter(p=>p.countedQty!=null&&p.countedQty2!=null&&Number(p.countedQty)!==Number(p.countedQty2)).length;
+  const onlyFirst=isDoubleCount()?products.filter(p=>p.countedQty!=null&&p.countedQty2==null).length:0;
+  const onlySecond=isDoubleCount()?products.filter(p=>p.countedQty==null&&p.countedQty2!=null).length:0;
+  let msg='── بررسی آمادگی بستن جلسه ──\n';
+  msg+='شمارش اول ثبت‌شده: '+counted+' از '+products.length+'\n';
+  msg+='شمارش‌نشده در شمارش اول: '+uncounted+'\n';
+  msg+='مغایرت با موجودی سیستم: '+diffs+'\n';
+  if(isDoubleCount()){msg+='اختلاف بین دو شمارش: '+mismatch2+'\n';msg+='فقط شمارش اول ثبت شده: '+onlyFirst+'\n';msg+='فقط شمارش دوم ثبت شده: '+onlySecond+'\n';}
+  msg+='\nبعد از بستن، شمارش قفل می‌شود.';
+  if(uncounted>0)msg+='\n\n⚠ هنوز '+uncounted+' کالا در شمارش اول ثبت نشده.';
+  if(mismatch2>0)msg+='\n⚠ '+mismatch2+' کالا اختلاف بین دو شمارش دارند.';
+  if(onlyFirst+onlySecond>0)msg+='\n⚠ '+(onlyFirst+onlySecond)+' کالا فقط یک بار شمارش شده‌اند.';
+  if(!confirm(msg))return;
+  if(uncounted>products.length*0.1){
+    if(!confirm('بیش از ۱۰٪ کالاها شمارش نشده. مطمئنید جلسه بسته شود؟'))return;
+  }
+  if(!session)session={startedAt:new Date().toISOString(),id:Date.now().toString(36)};
+  session.closedAt=new Date().toISOString();
+  session.closedBy=getOperatorName();
+  session.snapshot={total:products.length,counted:counted,diffs:diffs};
+  persistAll();
+  logAudit('close_session',session.snapshot);
+  updateSessionLockUI();
+  updateSessionUI();
+  toast('جلسه بسته و قفل شد','success');
+  showPage('report');
+}
+function reopenSession(){
+  if(!isSessionClosed())return;
+  if(!confirm('جلسه بازگشایی شود؟ امکان تغییر شمارش دوباره فعال می‌شود.'))return;
+  session.closedAt=null;
+  session.closedBy=null;
+  persistAll();
+  logAudit('reopen_session',{});
+  updateSessionLockUI();
+  toast('جلسه بازگشایی شد');
+}
+function renderReadiness(){
+  const el=document.getElementById('readinessBody');
+  if(!el)return;
+  const total=products.length;
+  if(!total){el.innerHTML='کالایی وارد نشده است.';return}
+  const counted=products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined).length;
+  const uncounted=products.filter(p=>p.countedQty===null||p.countedQty===undefined);
+  const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined&&Number(p.countedQty)!==Number(p.systemQty));
+  const mismatch2=products.filter(p=>p.countedQty!=null&&p.countedQty2!=null&&Number(p.countedQty)!==Number(p.countedQty2));
+  const onlyFirst=isDoubleCount()?products.filter(p=>p.countedQty!=null&&p.countedQty2==null):[];
+  const onlySecond=isDoubleCount()?products.filter(p=>p.countedQty==null&&p.countedQty2!=null):[];
+  const pct=Math.round(counted/total*100);
+  const issueCount=uncounted.length+mismatch2.length+onlyFirst.length+onlySecond.length;
+  let h='<div style="margin-bottom:6px"><b>'+pct+'٪</b> شمارش اول ثبت شده ('+counted.toLocaleString('fa-IR')+' از '+total.toLocaleString('fa-IR')+')</div>';
+  h+='<div class="item-meta">';
+  h+='<span'+(uncounted.length?' style="background:#ffe4e6;color:#9f1239"':'')+'>شمارش‌نشده: '+uncounted.length+'</span>';
+  h+='<span>مغایرت با سیستم: '+diffs.length+'</span>';
+  if(isDoubleCount()){
+    h+='<span'+(mismatch2.length?' style="background:#fef3c7;color:#92400e"':'')+'>اختلاف دو شمارش: '+mismatch2.length+'</span>';
+    h+='<span'+(onlyFirst.length?' style="background:#fef3c7;color:#92400e"':'')+'>فقط شمارش اول: '+onlyFirst.length+'</span>';
+    h+='<span'+(onlySecond.length?' style="background:#fef3c7;color:#92400e"':'')+'>فقط شمارش دوم: '+onlySecond.length+'</span>';
+  }
+  h+='</div>';
+  if(isSessionClosed())h+='<p style="margin-top:8px;color:var(--success);font-weight:700">جلسه بسته و قفل است.</p>';
+  else if(issueCount===0)h+='<p style="margin-top:8px;color:var(--success);font-weight:700">موارد ضروری بررسی شده‌اند؛ می‌توانید جلسه را ببندید ✓</p>';
+  else h+='<p style="margin-top:8px">پیش از بستن، '+issueCount+' مورد نیازمند بررسی است. بستن جلسه همچنان با تأیید صریح امکان‌پذیر است.</p>';
+  el.innerHTML=h;
+  const btn=document.getElementById('btnReadyClose');
+  if(btn)btn.style.display=isSessionClosed()?'none':'block';
+}
+function toggleDiscrepancyReview(){
+  const panel=document.getElementById('discrepancyReviewPanel');
+  if(!panel)return;
+  const opening=panel.style.display==='none'||!panel.style.display;
+  panel.style.display=opening?'block':'none';
+  if(opening)renderDiscrepancyReview();
+}
+function getReviewIssues(){
+  return products.filter(p=>{
+    const firstMissing=p.countedQty===null||p.countedQty===undefined;
+    const secondMissing=isDoubleCount()&&(p.countedQty2===null||p.countedQty2===undefined);
+    const mismatch=isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null&&Number(p.countedQty)!==Number(p.countedQty2);
+    const systemMismatch=p.countedQty!=null&&Number(p.countedQty)!==Number(p.systemQty);
+    return firstMissing||secondMissing||mismatch||systemMismatch;
+  });
+}
+function renderDiscrepancyReview(){
+  const panel=document.getElementById('discrepancyReviewPanel');if(!panel)return;
+  const list=getReviewIssues();
+  if(!list.length){panel.innerHTML='<div class="empty-state" style="padding:12px">موردی برای رسیدگی وجود ندارد.</div>';return;}
+  const escAttr=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  panel.innerHTML='<div class="hint" style="margin-bottom:8px">برای هر کالا نتیجه رسیدگی را انتخاب کنید. ثبت وضعیت، علت، مسئول و تأییدکننده در سابقه همان کالا ذخیره می‌شود.</div>'+list.map(p=>{
+    const status=p.reviewStatus||'pending';
+    const label=status==='approved'?'تأییدشده':status==='recount'?'نیازمند شمارش مجدد':status==='corrected'?'اصلاح‌شده':'در انتظار رسیدگی';
+    const reasons=[];
+    if(p.countedQty==null)reasons.push('شمارش اول ثبت نشده');
+    if(isDoubleCount()&&p.countedQty2==null)reasons.push('شمارش دوم ثبت نشده');
+    if(isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null&&Number(p.countedQty)!==Number(p.countedQty2))reasons.push('اختلاف دو شمارش');
+    if(p.countedQty!=null&&Number(p.countedQty)!==Number(p.systemQty))reasons.push('مغایرت با سیستم');
+    return '<div class="item" style="margin-bottom:10px"><div class="item-header"><div><div class="item-name">'+esc(p.name||'بدون نام')+'</div><div class="item-code">'+esc(p.code||p.sku||'')+'</div></div><span class="badge">'+label+'</span></div><div class="hint" style="margin:5px 0">'+reasons.join('؛ ')+'</div><label>نتیجه رسیدگی</label><select class="form-control" onchange="saveDiscrepancyReview(\''+escAttr(p.id)+'\',\'reviewStatus\',this.value)"><option value="pending" '+(status==='pending'?'selected':'')+'>در انتظار رسیدگی</option><option value="approved" '+(status==='approved'?'selected':'')+'>تأییدشده</option><option value="recount" '+(status==='recount'?'selected':'')+'>نیازمند شمارش مجدد</option><option value="corrected" '+(status==='corrected'?'selected':'')+'>اصلاح‌شده</option></select><label style="margin-top:6px">علت / توضیحات</label><input class="form-control" value="'+escAttr(p.reviewReason)+'" placeholder="علت اختلاف یا نتیجه بررسی" onchange="saveDiscrepancyReview(\''+escAttr(p.id)+'\',\'reviewReason\',this.value)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px"><div><label>مسئول رسیدگی</label><input class="form-control" value="'+escAttr(p.reviewResponsible)+'" placeholder="نام مسئول" onchange="saveDiscrepancyReview(\''+escAttr(p.id)+'\',\'reviewResponsible\',this.value)"></div><div><label>تأییدکننده</label><input class="form-control" value="'+escAttr(p.reviewApprover)+'" placeholder="نام تأییدکننده" onchange="saveDiscrepancyReview(\''+escAttr(p.id)+'\',\'reviewApprover\',this.value)"></div></div><div class="hint" style="margin-top:5px">آخرین ثبت: '+esc(p.reviewUpdatedAt||'ثبت نشده')+'</div></div>';
+  }).join('');
+}
+function saveDiscrepancyReview(id,field,value){
+  const allowed=['reviewStatus','reviewReason','reviewResponsible','reviewApprover'];if(!allowed.includes(field))return;
+  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  const prev=p[field]??'';p[field]=String(value??'').trim();p.reviewUpdatedAt=new Date().toLocaleString('fa-IR');
+  persistAll();logAudit('discrepancy_review',{id:p.id,name:p.name,field:field,previous:prev,value:p[field],status:p.reviewStatus||'pending'});
+  renderDiscrepancyReview();toast('نتیجه رسیدگی ذخیره شد','success');
+}
+
+function exportReadinessIssues(){
+  if(!products.length)return toast('کالایی برای بررسی وجود ندارد','error');
+  const rows=[];
+  products.forEach(p=>{
+    const firstMissing=p.countedQty===null||p.countedQty===undefined;
+    const secondMissing=isDoubleCount()&&(p.countedQty2===null||p.countedQty2===undefined);
+    const mismatch=isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null&&Number(p.countedQty)!==Number(p.countedQty2);
+    const systemMismatch=p.countedQty!=null&&Number(p.countedQty)!==Number(p.systemQty);
+    if(firstMissing||secondMissing||mismatch||systemMismatch){
+      const status=[];
+      if(firstMissing)status.push('شمارش اول ثبت نشده');
+      if(isDoubleCount()&&secondMissing)status.push('شمارش دوم ثبت نشده');
+      if(mismatch)status.push('اختلاف دو شمارش');
+      if(systemMismatch)status.push('مغایرت با موجودی سیستم');
+      rows.push({'بارکد':p.code||'','کد کالا':p.sku||'','نام کالا':p.name||'','محل':p.location||'', 'موجودی سیستم':p.systemQty??'', 'شمارش اول':p.countedQty??'', 'شمارش دوم':isDoubleCount()?(p.countedQty2??''):'', 'اختلاف دوم منهای اول':isDoubleCount()&&p.countedQty!=null&&p.countedQty2!=null?Number(p.countedQty2)-Number(p.countedQty):'', 'وضعیت بررسی':status.join('؛ '), 'نتیجه رسیدگی':p.reviewStatus==='approved'?'تأییدشده':p.reviewStatus==='recount'?'نیازمند شمارش مجدد':p.reviewStatus==='corrected'?'اصلاح‌شده':'در انتظار رسیدگی', 'علت رسیدگی':p.reviewReason||'', 'مسئول رسیدگی':p.reviewResponsible||'', 'تأییدکننده':p.reviewApprover||'', 'آخرین ثبت رسیدگی':p.reviewUpdatedAt||'', 'قیمت واحد':p.price||0, 'یادداشت':p.note||''});
+    }
+  });
+  if(!rows.length)return toast('موردی نیازمند بررسی پیدا نشد','success');
+  const filename='anbar-readiness-issues-'+dateStr()+'.xlsx';
+  if(!window.XLSX){if(saveOfflineXlsx([{name:'موارد بررسی',rows:rowsToSheet(rows)}],filename))toast('گزارش موارد نیازمند بررسی ذخیره شد','success');return;}
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'موارد بررسی');
+  if(!saveWorkbookFile(wb,filename))return;
+  logAudit('export_readiness_issues',{count:rows.length});toast('گزارش '+rows.length+' مورد نیازمند بررسی آماده شد','success');
+}
+
+function printProfessionalReport(){
+  const total=products.length;
+  const counted=products.filter(p=>p.countedQty!==null).length;
+  const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty);
+  const uncounted=products.filter(p=>p.countedQty===null);
+  const diffValue=diffs.reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);
+  const over=diffs.filter(p=>p.countedQty>p.systemQty);
+  const under=diffs.filter(p=>p.countedQty<p.systemQty);
+  const op=getOperatorName();
+  const now=new Date();
+  const rows=diffs.slice(0,500).map((p,i)=>{
+    const d=p.countedQty-p.systemQty;
+    const val=d*(p.price||0);
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(p.code||'')+'</td><td>'+esc(p.name)+'</td><td>'+p.systemQty+'</td><td>'+p.countedQty+'</td><td style="font-weight:bold">'+(d>0?'+':'')+d+'</td><td>'+(p.price?fmtMoney(val):'—')+'</td><td>'+esc(p.location||'')+'</td></tr>';
+  }).join('');
+  const el=document.getElementById('printReport');
+  if(!el){window.print();return}
+  el.innerHTML='<h1>گزارش انبارگردانی</h1><div class="meta"><div>تاریخ گزارش: '+now.toLocaleDateString('fa-IR')+' '+now.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})+'</div><div>شمارش‌کننده: '+esc(op)+'</div><div>جلسه: '+(session?new Date(session.startedAt).toLocaleDateString('fa-IR'):'—')+(isSessionClosed()?' | بسته: '+formatAuditTime(session.closedAt):' | باز')+'</div></div>'+
+    '<table><tr><th>کل کالا</th><th>شمارش‌شده</th><th>شمارش‌نشده</th><th>مغایرت</th><th>اضافه</th><th>کسری</th><th>ارزش خالص مغایرت</th></tr><tr><td>'+total+'</td><td>'+counted+'</td><td>'+uncounted.length+'</td><td>'+diffs.length+'</td><td>'+over.length+'</td><td>'+under.length+'</td><td>'+fmtMoney(diffValue)+'</td></tr></table>'+
+    '<h2 style="margin-top:18px;font-size:13pt">لیست مغایرت‌ها</h2>'+
+    (diffs.length?'<table><thead><tr><th>#</th><th>بارکد</th><th>نام</th><th>سیستم</th><th>شمارش</th><th>مغایرت</th><th>ارزش</th><th>محل</th></tr></thead><tbody>'+rows+'</tbody></table>':'<p>مغایرتی ثبت نشده است.</p>')+
+    (uncounted.length?'<p style="margin-top:12px">تعداد شمارش‌نشده: '+uncounted.length+' کالا</p>':'')+
+    '<p style="margin-top:24px;font-size:10pt">امضا مسئول انبار: ................. &nbsp;&nbsp;&nbsp; امضا حسابرسی: .................</p>';
+  el.style.display='block';
+  setTimeout(function(){window.print();setTimeout(function(){el.style.display='none'},500)},200);
+}
+function exportFinalReport(){
+  if(!isSessionClosed())return toast('ابتدا جلسه را ببندید');
+  const data=products.map(p=>({
+    'بارکد کالا':p.code||'','نام کالا':p.name,
+    'تعداد':p.countedQty!==null?p.countedQty:'','موجودی سیستم':p.systemQty,
+    'مغایرت':p.countedQty!==null?(p.countedQty-p.systemQty):'',
+    'قیمت واحد':p.price||0,
+    'ارزش مغایرت':p.countedQty!==null?((p.countedQty-p.systemQty)*(p.price||0)):'',
+    'محل':p.location||'','یادداشت':p.note||'',
+    'وضعیت':p.countedQty===null?'شمارش‌نشده':(p.countedQty===p.systemQty?'تطابق':'مغایرت')
+  }));
+  if(!window.XLSX){const counted=products.filter(p=>p.countedQty!==null).length;const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty);const diffValue=diffs.reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);const summary=[{'تاریخ شروع':session.startedAt||'','تاریخ بستن':session.closedAt||'','بسته‌شده توسط':session.closedBy||'','کل کالا':products.length,'شمارش‌شده':counted,'مغایرت':diffs.length,'ارزش خالص مغایرت':diffValue}];if(saveOfflineXlsx([{name:'گزارش نهایی',rows:rowsToSheet(data)},{name:'خلاصه',rows:rowsToSheet(summary)}],'anbar-final-'+dateStr()+'.xlsx')){logAudit('export_final',{count:products.length,format:'XLSX'});toast('گزارش نهایی اکسل ذخیره شد','success');}return;}
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'گزارش نهایی');
+  const counted=products.filter(p=>p.countedQty!==null).length;
+  const diffs=products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty);
+  const diffValue=diffs.reduce((s,p)=>s+((p.countedQty-p.systemQty)*(p.price||0)),0);
+  const summary=[{'تاریخ شروع':session.startedAt||'','تاریخ بستن':session.closedAt||'','بسته‌شده توسط':session.closedBy||'','کل کالا':products.length,'شمارش‌شده':counted,'مغایرت':diffs.length,'ارزش خالص مغایرت':diffValue}];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'خلاصه');
+  if(!saveWorkbookFile(wb,'anbar-final-'+dateStr()+'.xlsx'))return;
+  logAudit('export_final',{count:products.length});
+  toast('گزارش نهایی دانلود شد','success');
+}
+
+function exportExcel(onlyDiff){if(!products.length)return toast('کالایی نیست');let list=onlyDiff?products.filter(p=>p.countedQty!==null&&p.countedQty!==p.systemQty):products;if(!list.length)return toast('موردی برای خروجی نیست');const data=list.map(p=>({'بارکد کالا':p.code||'','نام کالا':p.name,'تعداد':p.countedQty!==null?p.countedQty:'','موجودی سیستم':p.systemQty,'شمارش ۱':p.countedQty!==null?p.countedQty:'','شمارش ۲':p.countedQty2!=null?p.countedQty2:'','مغایرت':p.countedQty!==null?(p.countedQty-p.systemQty):'','قیمت واحد':p.price||0,'ارزش مغایرت':p.countedQty!==null?((p.countedQty-p.systemQty)*(p.price||0)):'','یادداشت':p.note||'','محل':p.location||''}));if(!window.XLSX){if(saveOfflineXlsx([{name:onlyDiff?'مغایرت‌ها':'انبارگردانی',rows:rowsToSheet(data)}],`anbar-${onlyDiff?'diff-':''}${dateStr()}.xlsx`))toast('فایل اکسل ذخیره شد','success');return;}const ws=XLSX.utils.json_to_sheet(data);ws['!cols']=[{wch:16},{wch:32},{wch:10},{wch:12},{wch:10},{wch:20},{wch:12}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,onlyDiff?'مغایرت‌ها':'انبارگردانی');if(!saveWorkbookFile(wb,`anbar-${onlyDiff?'diff-':''}${dateStr()}.xlsx`))return;toast('درخواست ذخیره اکسل آماده شد','success')}
+function exportDoubleCountMismatches(){
+  const compared=products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined&&p.countedQty2!==null&&p.countedQty2!==undefined);
+  const list=compared.filter(p=>Number(p.countedQty)!==Number(p.countedQty2));
+  if(!compared.length){toast('برای هیچ کالایی هر دو شمارش ثبت نشده است','error');return}
+  if(!list.length){toast('بین شمارش اول و دوم اختلافی ثبت نشده است','success');return}
+  const data=list.map(p=>({
+    'بارکد کالا':p.code||'', 'کد کالا':p.sku||'', 'نام کالا':p.name||'', 'محل':p.location||'',
+    'شمارش اول':p.countedQty, 'شمارش دوم':p.countedQty2,
+    'اختلاف (دوم منهای اول)':Number(p.countedQty2)-Number(p.countedQty),
+    'موجودی سیستم':p.systemQty??'', 'اختلاف شمارش دوم با سیستم':Number(p.countedQty2)-Number(p.systemQty||0),
+    'قیمت واحد':p.price||0, 'ارزش اختلاف دو شمارش':(Number(p.countedQty2)-Number(p.countedQty))*(Number(p.price)||0),
+    'یادداشت':p.note||''
+  }));
+  const filename=`anbar-double-count-diff-${dateStr()}.xlsx`;
+  if(!window.XLSX){if(saveOfflineXlsx([{name:'اختلاف دو شمارش',rows:rowsToSheet(data)}],filename))toast('گزارش اختلاف دو شمارش ذخیره شد','success');return;}
+  const ws=XLSX.utils.json_to_sheet(data);ws['!cols']=[{wch:16},{wch:16},{wch:32},{wch:18},{wch:12},{wch:12},{wch:20},{wch:14},{wch:22},{wch:14},{wch:22},{wch:30}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'اختلاف دو شمارش');
+  if(!saveWorkbookFile(wb,filename))return;toast(`گزارش ${list.length} کالای دارای اختلاف آماده شد`,'success');
+}
+
+function exportCSV(){const h=['بارکد کالا','نام کالا','تعداد','موجودی سیستم','مغایرت','یادداشت','محل'];const rows=products.map(p=>{const d=p.countedQty!==null?(p.countedQty-p.systemQty):'';return[p.code||'',p.name,p.countedQty!==null?p.countedQty:'',p.systemQty,d,p.note||'',p.location||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')});downloadFile('\uFEFF'+h.join(',')+'\n'+rows.join('\n'),`anbar-${dateStr()}.csv`,'text/csv;charset=utf-8');toast('CSV دانلود شد')}
+
+function saveOperator(){
+  const n=(document.getElementById('operatorName')?.value||'').trim();
+  localStorage.setItem('anbar_operator',n);
+  const el=document.getElementById('operatorLabel');
+  if(el)el.textContent='👤 '+(n||'—');
+}
+function loadOperator(){
+  const n=localStorage.getItem('anbar_operator')||'';
+  const inp=document.getElementById('operatorName');
+  if(inp)inp.value=n;
+  const el=document.getElementById('operatorLabel');
+  if(el)el.textContent='👤 '+(n||'—');
+}
+function exportPartialCount(){
+  const op=(localStorage.getItem('anbar_operator')||'').trim()||'بدون‌نام';
+  const counted=products.filter(p=>p.countedQty!==null);
+  if(!counted.length)return toast('شمارشی برای خروجی نیست','error');
+  const payload={
+    type:'anbar-partial',
+    version:2,
+    transferId:'tr-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10),
+    operator:op,
+    sessionId:session?session.id:null,
+    exportedAt:new Date().toISOString(),
+    counts:counted.map(p=>({
+      code:p.code||'',
+      sku:p.sku||'',
+      name:p.name,
+      countedQty:p.countedQty,
+      systemQty:p.systemQty,
+      location:p.location||'',
+      note:p.note||''
+    }))
+  };
+  downloadFile(JSON.stringify(payload,null,2),`anbar-partial-${op}-${dateStr()}.json`,'application/json');
+  toast(`${counted.length} شمارش توسط «${op}» صادر شد`,'success');
+}
+function partialTransferKey(data){
+  // Stable fingerprint also supports older v1 transfer files without transferId.
+  const raw=data.transferId?String(data.transferId):JSON.stringify({
+    operator:data.operator||'',sessionId:data.sessionId||null,exportedAt:data.exportedAt||'',
+    counts:data.counts.map(c=>({code:c.code||'',sku:c.sku||'',name:c.name||'',countedQty:c.countedQty,systemQty:c.systemQty}))
+  });
+  let h=2166136261;
+  for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619)}
+  return 'partial-'+(h>>>0).toString(16)+'-'+raw.length;
+}
+function getImportedPartialKeys(){
+  try{const a=JSON.parse(localStorage.getItem('anbar_imported_partial_ids')||'[]');return Array.isArray(a)?a:[]}catch(_){return []}
+}
+function rememberImportedPartialKey(key){
+  const keys=getImportedPartialKeys();
+  if(!keys.includes(key))keys.push(key);
+  // Keep a bounded local history to avoid unlimited browser storage growth.
+  localStorage.setItem('anbar_imported_partial_ids',JSON.stringify(keys.slice(-500)));
+}
+function mergePartialCount(e){
+  const input=e&&e.target;
+  const file=input&&input.files&&input.files[0];
+  if(!file)return;
+  const status=document.getElementById('mergeStatus');
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data||data.type!=='anbar-partial'||!Array.isArray(data.counts)||!data.counts.length){
+        toast('فایل ادغام معتبر نیست یا شمارشی ندارد','error');
+        if(status)status.textContent='فرمت نامعتبر یا فایل خالی';
+        return;
+      }
+      // Validate the whole transfer before touching any product.
+      const invalid=data.counts.some(c=>!c||typeof c!=='object'||
+        (typeof c.name!=='string'&&!c.code&&!c.sku)||
+        c.countedQty===null||c.countedQty===undefined||c.countedQty===''||!Number.isFinite(Number(c.countedQty))||Number(c.countedQty)<0||
+        (c.systemQty!==undefined&&c.systemQty!==null&&(!Number.isFinite(Number(c.systemQty))||Number(c.systemQty)<0)));
+      if(invalid){
+        toast('فایل شامل نام یا تعداد نامعتبر است؛ هیچ تغییری اعمال نشد','error');
+        if(status)status.textContent='اطلاعات نامعتبر — ادغام انجام نشد';
+        return;
+      }
+      const transferKey=partialTransferKey(data);
+      const importedKeys=getImportedPartialKeys();
+      if(importedKeys.includes(transferKey)){
+        toast('این فایل قبلاً در همین دستگاه ادغام شده است','error');
+        if(status)status.textContent='فایل تکراری: ادغام دوباره انجام نشد';
+        return;
+      }
+      let matched=0,added=0,conflicts=0,summed=0;
+      const op=data.operator||'ناشناس';
+      const byCode=new Map(),bySku=new Map(),byName=new Map();
+      products.forEach((p,i)=>{
+        if(p.code&&!byCode.has(String(p.code).trim()))byCode.set(String(p.code).trim(),i);
+        if(p.sku&&!bySku.has(String(p.sku).trim()))bySku.set(String(p.sku).trim(),i);
+        if(p.name&&!byName.has(String(p.name).trim()))byName.set(String(p.name).trim(),i);
+      });
+      const undoItems=[];
+      data.counts.forEach(c=>{
+        const code=String(c.code||'').trim(),sku=String(c.sku||'').trim(),name=String(c.name||'').trim();
+        let idx=code&&byCode.has(code)?byCode.get(code):sku&&bySku.has(sku)?bySku.get(sku):name&&byName.has(name)?byName.get(name):undefined;
+        const qty=Number(c.countedQty);
+        if(idx===undefined){
+          const np={
+            id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+            name:name||('کالای '+(code||sku)),code:code||sku,sku:sku,unit:'عدد',
+            systemQty:c.systemQty==null?0:Number(c.systemQty),price:0,location:c.location||'',
+            note:(c.note||'')+(c.note?' | ':'')+'از شمارش '+op,
+            countedQty:qty,createdAt:new Date().toISOString()
+          };
+          products.push(np);
+          const newIndex=products.length-1;
+          if(np.code&&!byCode.has(String(np.code).trim()))byCode.set(String(np.code).trim(),newIndex);
+          if(np.sku&&!bySku.has(String(np.sku).trim()))bySku.set(String(np.sku).trim(),newIndex);
+          if(np.name&&!byName.has(String(np.name).trim()))byName.set(String(np.name).trim(),newIndex);
+          added++;
+          return;
+        }
+        const p=products[idx];
+        undoItems.push({id:p.id,prev:p.countedQty});
+        if(p.countedQty===null||p.countedQty===undefined){p.countedQty=qty;matched++}
+        else if(Number(p.countedQty)!==qty){
+          p.countedQty=Number(p.countedQty||0)+qty;
+          conflicts++;summed++;
+          const noteBit='[ادغام '+op+': +'+qty+']';
+          p.note=((p.note||'')+' '+noteBit).trim();
+        }else matched++;
+        if(c.location&&!p.location)p.location=c.location;
+      });
+      if(undoItems.length)pushUndo({type:'bulk',items:undoItems});
+      save();renderAll();updateHeader();
+      rememberImportedPartialKey(transferKey);
+      const msg=`ادغام «${op}»: ${matched} تطبیق، ${summed} جمع‌شده، ${added} کالای جدید، ${conflicts} مغایرت عددی`;
+      if(status)status.textContent=msg;
+      logAudit('merge',{operator:op,matched:matched,added:added,summed:summed,transferKey:transferKey,sessionId:data.sessionId||null});
+      toast('ادغام انجام شد؛ فایل برای جلوگیری از ورود تکراری ثبت شد','success');
+    }catch(err){
+      console.error('Partial count merge failed',err);
+      toast('خطا در خواندن یا ادغام فایل','error');
+      if(status)status.textContent=String(err.message||err);
+    }finally{if(input)input.value=''}
+  };
+  reader.onerror=()=>{toast('خواندن فایل ناموفق بود','error');if(status)status.textContent='خواندن فایل ناموفق بود';if(input)input.value=''};
+  reader.readAsText(file);
+}
+
+// Persist recent scans safely (called after every successful scan/session reset).
+function saveRecent(){
+  try{
+    recentScans = Array.isArray(recentScans) ? recentScans.slice(0,10) : [];
+    localStorage.setItem('anbar_recent', JSON.stringify(recentScans));
+  }catch(e){
+    console.warn('Could not save recent scans', e);
+  }
+}
+
+// ---- Data stability ----
+function snapshotAll(){
+  return {
+    type:'anbar-full-backup',
+    version:2,
+    savedAt:new Date().toISOString(),
+    products:products,
+    session:session,
+    settings:settings,
+    recentScans:recentScans,
+    auditLog:auditLog,
+    operator:localStorage.getItem('anbar_operator')||''
+  };
+}
+function persistAll(){
+  try{
+    const snapObj=snapshotAll();
+    const core={anbar_products:products,anbar_session:session,anbar_settings:settings,anbar_recent:recentScans.slice(0,10),anbar_audit:auditLog.slice(-AUDIT_MAX)};
+    const failed=[];
+    for(const [key,value] of Object.entries(core))if(!safeStorageWrite(key,value))failed.push(key);
+    if(failed.length){
+      toast('ذخیره اصلی کامل نشد؛ تلاش برای ثبت نسخه پشتیبان مستقل…','error');
+      console.error('[storage] partial save; failed keys:',failed);
+      idbPut('autobackup',snapObj).then(()=>{
+        try{localStorage.setItem('anbar_idb_backup_at',new Date().toISOString())}catch(_){}
+        autoBackupInfo();
+        toast('نسخه پشتیبان مستقل ثبت شد؛ فضای ذخیره‌سازی اصلی را آزاد کنید.','error');
+      }).catch(err=>{console.error('[storage] emergency IndexedDB backup failed',err);toast('ذخیره و پشتیبان‌گیری هر دو ناموفق بود؛ فوراً خروجی دستی بگیرید.','error')});
+      return false;
+    }
+    const stamp=new Date().toISOString();
+    try{localStorage.setItem('anbar_autobackup',JSON.stringify(snapObj));localStorage.setItem('anbar_autobackup_at',stamp)}
+    catch(backupErr){console.warn('[storage] local backup update failed; IndexedDB mirror will be attempted',backupErr)}
+    idbPut('autobackup',snapObj).then(()=>{
+      try{localStorage.setItem('anbar_idb_backup_at',stamp)}catch(_){}
+      autoBackupInfo();
+    }).catch(err=>{console.error('[storage] IndexedDB backup failed',err);try{window.__anbarIdbBackupFailed=true}catch(_){}});
+    return true;
+  }catch(e){console.error('persist fail',e);toast('ذخیره اطلاعات ناموفق بود؛ از برنامه خارج نشوید و پشتیبان بگیرید.','error');return false}
+}
+// override save() to use persistAll for products path - keep rebuildIndex
+function save(){
+  rebuildIndex();
+  persistAll();
+}
+function saveSettings(){
+  settings.continuousScan=document.getElementById('continuousScan').checked;
+  const an=document.getElementById('scannerAutoNext');if(an)settings.autoNextScan=an.checked;
+  settings.soundOnScan=document.getElementById('soundOnScan').checked;
+  settings.vibrateOnScan=document.getElementById('vibrateOnScan').checked;
+  settings.autoIncrement=document.getElementById('autoIncrement').checked;
+  const bc=document.getElementById('blindCount');if(bc)settings.blindCount=bc.checked;
+  const bt=document.getElementById('btScanner');if(bt)settings.btScanner=bt.checked!==false;
+  const dc=document.getElementById('doubleCount');if(dc)settings.doubleCount=dc.checked;
+  const dm=document.getElementById('darkMode');if(dm)settings.darkMode=dm.checked;
+  persistAll();
+  updateBlindBadge();
+}
+function loadSettingsUI(){
+  const el=id=>document.getElementById(id);
+  if(el('continuousScan'))el('continuousScan').checked=settings.continuousScan===true;
+  if(el('soundOnScan'))el('soundOnScan').checked=settings.soundOnScan!==false;
+  if(el('vibrateOnScan'))el('vibrateOnScan').checked=settings.vibrateOnScan!==false;
+  if(el('autoIncrement'))el('autoIncrement').checked=settings.autoIncrement!==false;
+  if(el('blindCount'))el('blindCount').checked=!!settings.blindCount;
+  if(el('btScanner'))el('btScanner').checked=settings.btScanner!==false;
+  if(el('doubleCount'))el('doubleCount').checked=!!settings.doubleCount;
+  if(el('darkMode'))el('darkMode').checked=!!settings.darkMode;
+  applyDarkMode();
+  updateBlindBadge();
+}
+
+function autoBackupInfo(){
+  let at='';try{at=localStorage.getItem('anbar_idb_backup_at')||localStorage.getItem('anbar_autobackup_at')||''}catch(_){}
+  const el=document.getElementById('backupInfo');
+  if(el)el.textContent=at?('آخرین نسخه پشتیبان ثبت‌شده: '+formatAuditTime(at)):'هنوز پشتیبان خودکاری ثبت نشده';
+}
+async function restoreAutoBackup(){
+  if(!confirm('بازیابی از آخرین پشتیبان خودکار؟ داده‌های فعلی جایگزین می‌شود.'))return;
+  try{
+    let data=null;try{const raw=localStorage.getItem('anbar_autobackup');if(raw)data=JSON.parse(raw)}catch(err){console.warn('Local auto-backup unreadable',err)}
+    if(!isValidBackup(data))data=await idbGet('autobackup');
+    if(!isValidBackup(data))return toast('پشتیبان خودکار معتبر پیدا نشد','error');
+    try{localStorage.setItem('anbar_pre_restore_backup',JSON.stringify(snapshotAll()));localStorage.setItem('anbar_pre_restore_at',new Date().toISOString())}catch(err){console.warn('Could not preserve pre-restore snapshot',err)}
+    applyFullBackup(data);logAudit('restore',{count:data.products.length,source:'auto-backup'});toast('از پشتیبان خودکار بازیابی شد','success');
+  }catch(e){console.error('Auto restore failed',e);toast('بازیابی پشتیبان ناموفق بود','error')}
+}
+function restorePreRestoreBackup(){
+  const raw=localStorage.getItem('anbar_pre_restore_backup');
+  if(!raw)return toast('نسخه قبل از بازیابی موجود نیست','error');
+  if(!confirm('نسخه ذخیره‌شده قبل از آخرین بازیابی برگردانده شود؟'))return;
+  try{const data=JSON.parse(raw);if(!isValidBackup(data))throw new Error('invalid');applyFullBackup(data);logAudit('restore-pre-restore',{count:data.products.length});toast('نسخه قبل از بازیابی برگشت داده شد','success')}
+  catch(e){console.error(e);toast('نسخه ذخیره‌شده خراب است','error')}
+}
+function applyFullBackup(data){
+  if(!isValidBackup(data))throw new Error('invalid backup schema');
+  const previous={products,session,settings,recentScans,auditLog,operator:getOperatorName()};
+  products=data.products.map(p=>({...p}));
+  session=data.session||session;
+  if(data.settings)settings={...settings,...data.settings};
+  if(Array.isArray(data.recentScans))recentScans=data.recentScans.slice(0,10);
+  if(Array.isArray(data.auditLog))auditLog=data.auditLog.slice(-AUDIT_MAX);
+  try{if(data.operator!==undefined)localStorage.setItem('anbar_operator',data.operator)}catch(err){console.warn('Could not store operator from backup',err)}
+  rebuildIndex();
+  if(!persistAll()){
+    products=previous.products;session=previous.session;settings=previous.settings;recentScans=previous.recentScans;auditLog=previous.auditLog;rebuildIndex();
+    throw new Error('Could not persist restored backup');
+  }
+  loadSettingsUI();loadOperator();
+  renderAll();updateHeader();updateSessionUI();updateStorageInfo();autoBackupInfo();
+}
+function exportFullBackup(){
+  const data=snapshotAll();
+  downloadFile(JSON.stringify(data,null,2),`anbar-full-backup-${dateStr()}.json`,'application/json');
+  toast('پشتیبان کامل دانلود شد','success');
+  logAudit('backup',{count:products.length});
+}
+function importFullBackup(e){
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!isValidBackup(data)){toast('فایل پشتیبان معتبر نیست یا ساختار آن ناقص است','error');return}
+      if(!confirm(`بازیابی ${data.products.length.toLocaleString('fa-IR')} کالا از پشتیبان؟\nاطلاعات فعلی جایگزین می‌شود.`))return;
+      // Preserve current state before replacement so a failed restore can be recovered.
+      try{localStorage.setItem('anbar_pre_restore_backup',JSON.stringify(snapshotAll()));localStorage.setItem('anbar_pre_restore_at',new Date().toISOString())}catch(err){console.warn('Could not preserve pre-restore snapshot',err)}
+      applyFullBackup(data);
+      logAudit('restore',{count:data.products.length,source:'full-backup'});
+      toast('بازیابی کامل انجام شد','success');
+    }catch(err){console.error('Backup restore failed',err);toast('خطا در خواندن یا بازیابی پشتیبان','error')}
+    finally{e.target.value=''}
+  };
+  reader.onerror=()=>{toast('خواندن فایل ناموفق بود','error');e.target.value=''};
+  reader.readAsText(file);
+}
+function isValidBackup(data){
+  if(!data||typeof data!=='object'||Array.isArray(data)||!Array.isArray(data.products)||data.products.length>250000)return false;
+  if(data.products.some(p=>!p||typeof p!=='object'||Array.isArray(p)||typeof p.name!=='string'))return false;
+  if(data.session!==undefined&&data.session!==null&&(typeof data.session!=='object'||Array.isArray(data.session)))return false;
+  if(data.settings!==undefined&&(!data.settings||typeof data.settings!=='object'||Array.isArray(data.settings)))return false;
+  if(data.recentScans!==undefined&&!Array.isArray(data.recentScans))return false;
+  if(data.auditLog!==undefined&&!Array.isArray(data.auditLog))return false;
+  if(data.operator!==undefined&&typeof data.operator!=='string')return false;
+  return true;
+}
+// IndexedDB helpers
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    if(!window.indexedDB)return reject('no idb');
+    const req=indexedDB.open('anbar_db',1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('kv'))db.createObjectStore('kv')};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbPut(key,val){
+  return idbOpen().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(val,key);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=()=>reject(tx.error);
+  }));
+}
+function idbGet(key){
+  return idbOpen().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('kv','readonly');
+    const r=tx.objectStore('kv').get(key);
+    r.onsuccess=()=>resolve(r.result);
+    r.onerror=()=>reject(r.error);
+  }));
+}
+async function tryRecoverFromIdb(){
+  try{
+    const data=await idbGet('autobackup');
+    const warnings=Array.isArray(window.__anbarStorageWarnings)&&window.__anbarStorageWarnings.length>0;
+    if(isValidBackup(data)&&((!products.length&&data.products.length)||warnings)){
+      if(confirm('نسخه پشتیبان محلی در دسترس است. آیا اطلاعات از آخرین نسخه پشتیبان بازیابی شود؟')){
+        applyFullBackup(data);logAudit('restore',{count:data.products.length,source:'indexeddb-recovery'});toast('از نسخه پشتیبان بازیابی شد','success');
+      }
+    }
+  }catch(err){console.warn('[storage] IndexedDB recovery unavailable',err)}
+}
+
+function exportJSON(){downloadFile(JSON.stringify(snapshotAll(),null,2),`anbar-backup-${dateStr()}.json`,'application/json');logAudit('backup',{count:products.length,source:'json'});toast('پشتیبان ذخیره شد')}
+async function exportAppDiagnostics(){
+  const checks={};
+  try{const k='__azar_diag_test__';localStorage.setItem(k,'1');checks.localStorage='ok';localStorage.removeItem(k)}catch(e){checks.localStorage='failed'}
+  checks.indexedDB=typeof indexedDB!=='undefined'?'available':'unavailable';
+  checks.nativeAndroidSave=!!(window.AzarAndroid&&typeof window.AzarAndroid.saveTextFile==='function');
+  checks.nativeAndroidXlsx=!!(window.AzarAndroid&&typeof window.AzarAndroid.saveBase64File==='function');
+  checks.xlsxLibrary=!!window.XLSX;
+  checks.xlsxMode=checks.xlsxLibrary?'library-present':'CSV-only-offline';
+  checks.externalXlsxDependency='removed';
+  checks.externalScannerLibrary=!!window.Html5Qrcode;
+  checks.scannerMode=checks.nativeBarcodeDetector?'native-BarcodeDetector':'manual-or-USB-Bluetooth-scanner';
+  checks.externalScannerDependency='removed';
+  checks.networkDependenciesRemoved=true;
+  checks.nativeBarcodeDetector=typeof BarcodeDetector!=='undefined';
+  checks.cameraAPI=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  checks.serviceWorker='serviceWorker' in navigator?'supported':'unsupported';
+  checks.secureContext=!!window.isSecureContext;
+  checks.online=navigator.onLine;
+  checks.productCount=Array.isArray(products)?products.length:0;
+  checks.countedProducts=Array.isArray(products)?products.filter(p=>p.countedQty!==null&&p.countedQty!==undefined).length:0;
+  checks.appVersion='1.4.0';
+  checks.generatedAt=new Date().toISOString();
+  const failed=Object.entries(checks).filter(([k,v])=>['localStorage'].includes(k)&&v!=='ok').length;
+  const status=document.getElementById('diagnosticsStatus');
+  if(status)status.textContent=`گزارش آماده شد؛ ${checks.productCount} کالا ثبت شده. وابستگی اینترنتی حذف شده؛ خروجی/ورودی اکسل در این نسخه با CSV انجام می‌شود؛ اسکن دوربین وابسته به پشتیبانی BarcodeDetector گوشی است.`;
+  downloadFile(JSON.stringify({type:'azar-anbar-diagnostics',checks},null,2),`azar-anbar-diagnostics-${dateStr()}.json`,'application/json');
+  toast(failed?'برخی آزمون‌های ذخیره‌سازی ناموفق بود':'گزارش سلامت آماده ذخیره است',failed?'error':'success');
+}
+function importJSON(e){const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const data=JSON.parse(ev.target.result);if(!isValidBackup(data)){toast('فرمت پشتیبان نامعتبر است','error');return}if(confirm(`${data.products.length.toLocaleString('fa-IR')} کالا جایگزین شود؟\nاطلاعات فعلی جایگزین می‌شود.`)){try{localStorage.setItem('anbar_pre_restore_backup',JSON.stringify(snapshotAll()));localStorage.setItem('anbar_pre_restore_at',new Date().toISOString())}catch(err){console.warn('Could not preserve pre-restore snapshot',err)}applyFullBackup(data);logAudit('restore',{count:data.products.length,source:'json'});toast('بازیابی شد','success')}}catch(err){console.error('JSON restore failed',err);toast('خطا در خواندن فایل پشتیبان','error')}finally{e.target.value=''}};r.onerror=()=>{toast('خواندن فایل ناموفق بود','error');e.target.value=''};r.readAsText(file)}
+function confirmReset(){if(confirm('همه داده‌ها پاک شود؟')&&confirm('مطمئن هستید؟')){logAudit('reset',{});products=[];session=null;recentScans=[];save();localStorage.removeItem('anbar_session');saveRecent();renderAll();updateHeader();updateSessionUI();document.getElementById('scanResultCard').classList.remove('show');toast('پاک شد')}}
+function downloadFile(c,f,t){
+  if(window.AzarAndroid&&typeof window.AzarAndroid.saveTextFile==='function'){
+    try{window.AzarAndroid.saveTextFile(String(f||'azar-anbar-export.txt'),String(t||'text/plain'),String(c??''));return}
+    catch(err){console.error('Native save failed',err);toast('ذخیره مستقیم ممکن نشد؛ روش مرورگر امتحان می‌شود','error')}
+  }
+  const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)
+}
+function dateStr(){return new Date().toISOString().slice(0,10)}
+function fmtMoney(n){const x=Math.round(Number(n)||0);return x.toLocaleString('fa-IR')+' ریال'}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function renderAll(){refreshLocationFilter();renderProductsList();renderCountList();renderRecent();if(document.getElementById('page-report').classList.contains('active'))renderReport()}
+</script>
+</body>
+</html>
